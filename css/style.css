@@ -1,6 +1,4 @@
-/* ======================================================
-   RESET
-====================================================== */
+/* RESET */
 
 * {
     margin: 0;
@@ -35,9 +33,7 @@ input {
 }
 
 
-/* ======================================================
-   CONTAINER
-====================================================== */
+/* CONTAINER */
 
 .container {
     width: 92%;
@@ -206,23 +202,6 @@ input {
     flex: 1;
 }
 
-.school-badge {
-    display: inline-block;
-
-    padding: 8px 16px;
-
-    margin-bottom: 25px;
-
-    background: #fff1df;
-    color: #ff6718;
-
-    border: 1px solid #ffd09f;
-
-    border-radius: 30px;
-
-    font-size: 14px;
-    font-weight: 700;
-}
 
 .hero h1 {
     font-size: clamp(42px, 5vw, 68px);
@@ -256,7 +235,9 @@ input {
 }
 
 
-/* Search */
+/* ======================================================
+   SEARCH
+====================================================== */
 
 .search-box {
     width: 100%;
@@ -323,7 +304,9 @@ input {
 }
 
 
-/* Hero image */
+/* ======================================================
+   HERO IMAGE
+====================================================== */
 
 .hero-image {
     flex: 0 0 46%;
@@ -427,7 +410,9 @@ input {
 }
 
 
-/* Status filter */
+/* ======================================================
+   FILTER STATUS
+====================================================== */
 
 .filter-status {
     display: flex;
@@ -457,7 +442,9 @@ input {
 }
 
 
-/* Category */
+/* ======================================================
+   CATEGORY
+====================================================== */
 
 .category-list {
     display: flex;
@@ -494,7 +481,9 @@ input {
 }
 
 
-/* Barang grid */
+/* ======================================================
+   BARANG GRID
+====================================================== */
 
 .barang-grid {
     display: grid;
@@ -506,7 +495,9 @@ input {
 }
 
 
-/* Card */
+/* ======================================================
+   BARANG CARD
+====================================================== */
 
 .barang-card {
     background: white;
@@ -531,7 +522,9 @@ input {
 }
 
 
-/* Image */
+/* ======================================================
+   BARANG IMAGE
+====================================================== */
 
 .barang-image {
     height: 240px;
@@ -551,7 +544,9 @@ input {
 }
 
 
-/* Status */
+/* ======================================================
+   STATUS
+====================================================== */
 
 .status-badge {
     position: absolute;
@@ -579,7 +574,9 @@ input {
 }
 
 
-/* Card content */
+/* ======================================================
+   BARANG CONTENT
+====================================================== */
 
 .barang-content {
     padding: 18px;
@@ -615,6 +612,11 @@ input {
     margin-bottom: 12px;
 }
 
+
+/* ======================================================
+   BARANG INFO
+====================================================== */
+
 .barang-info {
     display: flex;
 
@@ -628,6 +630,11 @@ input {
 
     margin-bottom: 15px;
 }
+
+
+/* ======================================================
+   BARANG FOOTER
+====================================================== */
 
 .barang-footer {
     display: flex;
@@ -663,6 +670,11 @@ input {
 
     font-weight: 700;
 }
+
+
+/* ======================================================
+   VIEW ALL
+====================================================== */
 
 .center-button {
     display: flex;
@@ -752,7 +764,9 @@ input {
 }
 
 
-/* Steps */
+/* ======================================================
+   STEPS
+====================================================== */
 
 .steps {
     display: grid;
@@ -960,108 +974,177 @@ input {
 
     color: white;
 
-    padding-top: 50px;
+    padding: 60px 0 0;
 }
+
+
+/* ======================================================
+   FOOTER GRID
+====================================================== */
 
 .footer-grid {
     display: grid;
 
     grid-template-columns:
-        2fr 1fr 1fr 1fr;
+        1.4fr
+        1.1fr
+        1fr;
 
-    gap: 45px;
+    gap: 70px;
 
-    padding-bottom: 40px;
+    padding-bottom: 60px;
 }
+
+
+/* ======================================================
+   FOOTER COLUMN
+====================================================== */
+
+.footer-column {
+    min-width: 0;
+}
+
+
+/* ======================================================
+   FOOTER LOGO
+====================================================== */
 
 .footer-logo {
     display: inline-block;
 
-    font-size: 22px;
+    font-size: 32px;
 
     font-weight: 900;
 
-    margin-bottom: 12px;
+    margin-bottom: 20px;
+
+    color: white;
 }
 
 .footer-logo span {
     color: #ff741d;
 }
 
-.footer-column p {
-    color: #d8d3ee;
 
-    font-size: 13px;
+/* ======================================================
+   FOOTER ABOUT
+====================================================== */
 
-    max-width: 350px;
+.footer-about p {
+    max-width: 560px;
+
+    color: #eeeaff;
+
+    font-size: 17px;
+
+    line-height: 1.8;
+
+    font-weight: 500;
 }
+
+
+/* ======================================================
+   FOOTER TITLE
+====================================================== */
 
 .footer-column h3 {
-    font-size: 16px;
-
-    margin-bottom: 15px;
-}
-
-.footer-column > a:not(.footer-logo) {
-    display: block;
-
-    color: #d8d3ee;
-
-    font-size: 13px;
-
-    margin-bottom: 8px;
-
-    transition: 0.2s;
-}
-
-.footer-column > a:not(.footer-logo):hover {
-    color: #ff7b1a;
-}
-
-
-/* Social */
-
-.social-icons {
-    display: flex;
-
-    gap: 10px;
-}
-
-.social-icons a {
-    width: 38px;
-    height: 38px;
-
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 50%;
-
-    background: rgba(255, 255, 255, 0.12);
-
     color: white;
 
-    font-weight: 700;
+    font-size: 26px;
+
+    font-weight: 900;
+
+    margin-bottom: 25px;
 }
 
-.social-icons a:hover {
-    background: #ff7b1a;
+
+/* ======================================================
+   FOOTER CONTACT
+====================================================== */
+
+.footer-contact p {
+    color: #eeeaff;
+
+    font-size: 17px;
+
+    line-height: 1.8;
+
+    margin-bottom: 10px;
 }
 
 
-/* Footer bottom */
+/* ======================================================
+   FOOTER OPERATIONAL
+====================================================== */
+
+.footer-operational {
+    padding-left: 10px;
+}
+
+.operational-list {
+    width: 100%;
+}
+
+
+/* Baris hari dan jam */
+
+.operational-row {
+    display: grid;
+
+    grid-template-columns:
+        1fr
+        auto;
+
+    align-items: center;
+
+    column-gap: 35px;
+
+    margin-bottom: 10px;
+
+    color: #eeeaff;
+
+    font-size: 17px;
+
+    line-height: 1.8;
+}
+
+
+/* Hari */
+
+.operational-row span {
+    text-align: left;
+
+    white-space: nowrap;
+}
+
+
+/* Jam / status */
+
+.operational-row strong {
+    text-align: right;
+
+    white-space: nowrap;
+
+    color: #ffffff;
+
+    font-weight: 600;
+}
+
+
+/* ======================================================
+   FOOTER BOTTOM
+====================================================== */
 
 .footer-bottom {
-    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    border-top: 1px solid rgba(255, 255, 255, 0.20);
 
     text-align: center;
 
-    padding: 18px;
+    padding: 20px;
 
-    color: #c9c4dd;
+    color: #d8d3ee;
 
-    font-size: 12px;
+    font-size: 14px;
 }
 
 
@@ -1070,6 +1153,8 @@ input {
 ====================================================== */
 
 @media (max-width: 950px) {
+
+    /* NAVBAR */
 
     .navbar-inner {
         flex-wrap: wrap;
@@ -1086,6 +1171,9 @@ input {
 
         padding-top: 5px;
     }
+
+
+    /* HERO */
 
     .hero-inner {
         flex-direction: column;
@@ -1109,20 +1197,32 @@ input {
         width: 100%;
     }
 
+
+    /* STATISTICS */
+
     .statistics-grid {
         grid-template-columns:
             repeat(2, 1fr);
     }
+
+
+    /* BARANG */
 
     .barang-grid {
         grid-template-columns:
             repeat(2, 1fr);
     }
 
+
+    /* STEPS */
+
     .steps {
         grid-template-columns:
             repeat(2, 1fr);
     }
+
+
+    /* CARA KERJA */
 
     .cara-top {
         flex-direction: column;
@@ -1136,14 +1236,30 @@ input {
         margin: auto;
     }
 
+
+    /* CONTACT */
+
     .contact-grid {
         grid-template-columns:
             1fr;
     }
 
+
+    /* FOOTER */
+
     .footer-grid {
         grid-template-columns:
-            repeat(2, 1fr);
+            1fr 1fr;
+
+        gap: 40px;
+    }
+
+    .footer-about {
+        grid-column: 1 / -1;
+    }
+
+    .footer-about p {
+        max-width: 700px;
     }
 }
 
@@ -1154,9 +1270,14 @@ input {
 
 @media (max-width: 650px) {
 
+    /* CONTAINER */
+
     .container {
         width: 90%;
     }
+
+
+    /* NAVBAR */
 
     .navbar-inner {
         justify-content: center;
@@ -1189,6 +1310,9 @@ input {
         padding-right: 10px;
     }
 
+
+    /* HERO */
+
     .hero {
         padding-top: 40px;
     }
@@ -1201,9 +1325,10 @@ input {
         font-size: 14px;
     }
 
-    .school-badge {
-        font-size: 11px;
-    }
+   
+
+
+    /* SEARCH */
 
     .search-box {
         min-height: 48px;
@@ -1212,6 +1337,9 @@ input {
     .search-box button {
         padding: 10px 16px;
     }
+
+
+    /* STATISTICS */
 
     .statistics-grid {
         grid-template-columns:
@@ -1228,6 +1356,9 @@ input {
         font-size: 12px;
     }
 
+
+    /* SECTION HEADER */
+
     .section-header {
         flex-direction: column;
 
@@ -1238,6 +1369,9 @@ input {
         font-size: 32px;
     }
 
+
+    /* FILTER */
+
     .filter-status {
         width: 100%;
     }
@@ -1245,6 +1379,9 @@ input {
     .filter-btn {
         flex: 1;
     }
+
+
+    /* BARANG */
 
     .barang-grid {
         grid-template-columns: 1fr;
@@ -1254,6 +1391,9 @@ input {
         height: 260px;
     }
 
+
+    /* CARA KERJA */
+
     .cara-text h2 {
         font-size: 32px;
     }
@@ -1261,6 +1401,9 @@ input {
     .steps {
         grid-template-columns: 1fr;
     }
+
+
+    /* CTA */
 
     .cta-box h2 {
         font-size: 25px;
@@ -1272,10 +1415,68 @@ input {
         align-items: stretch;
     }
 
+
+    /* CONTACT */
+
+    .contact-grid {
+        grid-template-columns: 1fr;
+    }
+
+
+    /* FOOTER */
+
+    .footer {
+        padding-top: 45px;
+    }
+
     .footer-grid {
         grid-template-columns: 1fr;
 
-        gap: 30px;
+        gap: 35px;
+
+        padding-bottom: 40px;
     }
 
+    .footer-about {
+        grid-column: auto;
+    }
+
+    .footer-logo {
+        font-size: 26px;
+    }
+
+    .footer-column h3 {
+        font-size: 22px;
+
+        margin-bottom: 18px;
+    }
+
+    .footer-about p,
+    .footer-contact p {
+        font-size: 14px;
+
+        line-height: 1.7;
+    }
+
+    .footer-operational {
+        padding-left: 0;
+    }
+
+    .operational-row {
+        grid-template-columns:
+            1fr
+            auto;
+
+        column-gap: 20px;
+
+        font-size: 14px;
+
+        line-height: 1.7;
+    }
+
+    .footer-bottom {
+        font-size: 12px;
+
+        padding: 16px;
+    }
 }
