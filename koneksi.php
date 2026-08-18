@@ -3,7 +3,7 @@
 $host = "localhost";
 $user = "root";
 $password = "";
-$database = "lost_found_sekolah";
+$database = "lostfound";
 
 $koneksi = mysqli_connect(
     $host,

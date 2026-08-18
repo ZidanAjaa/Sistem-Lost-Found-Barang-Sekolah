@@ -979,9 +979,6 @@
                 </div>
 
             </div>
-
-
-
             <!-- KOLOM 2 - HUBUNGI KAMI -->
 
             <div class="footer-column">
