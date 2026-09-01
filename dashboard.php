@@ -33,4 +33,5 @@ $role = $_SESSION['role'];
         <p>Menu user di sini.</p>
     <?php endif; ?>
 </body>
+<!-- </html>RGAIJONfds -->bhaehgsdthgpsoeh
 </html>
