@@ -4,13 +4,30 @@
 // Sistem Lost & Found SMK PGRI 3 Tlogomas Malang
 // ======================================================
 
-// Data statistik
+// ======================================================
+// SESSION LOGIN
+// ======================================================
+
+session_start();
+
+// Mengecek apakah user sudah login
+$isLoggedIn = isset($_SESSION['login']) && $_SESSION['login'] === true;
+
+
+// ======================================================
+// DATA STATISTIK
+// ======================================================
+
 $totalDilaporkan = 312;
 $totalDitemukan = 200;
 $tingkatKeberhasilan = 99;
 $rataProses = "2.4 Hari";
 
-// Data barang
+
+// ======================================================
+// DATA BARANG
+// ======================================================
+
 $barang = [
     [
         "nama" => "Tas Ransel Hitam",
@@ -22,6 +39,7 @@ $barang = [
         "pemilik" => "Rizky A. - XI DKVA",
         "status" => "Belum Ditemukan"
     ],
+
     [
         "nama" => "Tumbler Warna Hitam & Putih",
         "gambar" => "img/tumbler.jpg",
@@ -32,6 +50,7 @@ $barang = [
         "pemilik" => "Zidan - XI RPLA",
         "status" => "Ditemukan"
     ],
+
     [
         "nama" => "AirPods Pro Putih",
         "gambar" => "img/airpods.jpg",
@@ -42,6 +61,7 @@ $barang = [
         "pemilik" => "Nesya R. - X TKJA",
         "status" => "Ditemukan"
     ],
+
     [
         "nama" => "Dompet Warna Hitam",
         "gambar" => "img/dompet.jpg",
@@ -52,6 +72,7 @@ $barang = [
         "pemilik" => "Rizky H. - XI RPLB",
         "status" => "Ditemukan"
     ],
+
     [
         "nama" => "Bekal Makanan",
         "gambar" => "img/bekal.jpg",
@@ -59,9 +80,10 @@ $barang = [
         "deskripsi" => "Bekal makanan berwarna cokelat yang hilang saat istirahat.",
         "lokasi" => "Lab Oracle",
         "tanggal" => "09 Agustus 2026",
-        "pemilik" => "Zidan - XI DKVA",
+        "pemilik" => "Yona - XI DKVA",
         "status" => "Belum Ditemukan"
     ],
+
     [
         "nama" => "Kunci Motor",
         "gambar" => "img/kunci.jpg",
@@ -73,6 +95,7 @@ $barang = [
         "status" => "Ditemukan"
     ]
 ];
+
 ?>
 
 <!DOCTYPE html>
@@ -82,21 +105,27 @@ $barang = [
 
     <meta charset="UTF-8">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    <title>LostFound.sch - SMK PGRI 3 Tlogomas Malang</title>
+    <title>
+        LostFound.sch - SMK PGRI 3 Tlogomas Malang
+    </title>
 
     <meta
         name="description"
         content="Platform resmi pelaporan barang hilang dan temuan di SMK PGRI 3 Tlogomas Malang."
     >
 
+    <!-- CSS UTAMA -->
     <link
         rel="stylesheet"
         href="css/style.css"
     >
 
-    <!-- Font Awesome -->
+    <!-- FONT AWESOME -->
     <link
         rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
@@ -155,6 +184,10 @@ $barang = [
                 Kontak
             </a>
 
+
+            <!-- =================================================
+                 LOGIN / PROFIL USER
+            ================================================== -->
 
             <?php if ($isLoggedIn): ?>
 
@@ -254,7 +287,10 @@ $barang = [
                 method="GET"
             >
 
-                <span class="search-icon">🔍</span>
+                <span class="search-icon">
+                    
+                </span>
+
 
                 <input
                     type="text"
@@ -271,7 +307,6 @@ $barang = [
 
 
         </div>
-
 
 
         <!-- HERO IMAGE -->
@@ -306,12 +341,12 @@ $barang = [
         <div class="stat-card">
 
             <div class="stat-icon">
-                📦
+                
             </div>
 
 
             <div class="stat-number">
-                312
+                <?= $totalDilaporkan; ?>
             </div>
 
 
@@ -328,12 +363,12 @@ $barang = [
         <div class="stat-card">
 
             <div class="stat-icon">
-                ✅
+                
             </div>
 
 
             <div class="stat-number">
-                200
+                <?= $totalDitemukan; ?>
             </div>
 
 
@@ -350,12 +385,12 @@ $barang = [
         <div class="stat-card">
 
             <div class="stat-icon">
-                🏆
+                
             </div>
 
 
             <div class="stat-number">
-                99%
+                <?= $tingkatKeberhasilan; ?>%
             </div>
 
 
@@ -372,7 +407,7 @@ $barang = [
         <div class="stat-card">
 
             <div class="stat-icon">
-                ⚡
+                
             </div>
 
 
@@ -410,7 +445,6 @@ $barang = [
 
         <div class="section-header">
 
-
             <div>
 
                 <h2>
@@ -419,17 +453,15 @@ $barang = [
 
 
                 <p>
-                    10 barang ditemukan
+                    6 barang ditemukan
                 </p>
 
             </div>
 
 
-
             <!-- STATUS -->
 
             <div class="filter-status">
-
 
                 <button
                     class="filter-btn active"
@@ -454,9 +486,7 @@ $barang = [
                     Ditemukan
                 </button>
 
-
             </div>
-
 
         </div>
 
@@ -465,7 +495,6 @@ $barang = [
         <!-- CATEGORY -->
 
         <div class="category-list">
-
 
             <button
                 class="category-btn active"
@@ -514,7 +543,6 @@ $barang = [
                 Dokumen
             </button>
 
-
         </div>
 
 
@@ -532,7 +560,6 @@ $barang = [
 
             <article class="barang-card">
 
-
                 <div class="barang-image">
 
                     <img
@@ -548,9 +575,7 @@ $barang = [
                 </div>
 
 
-
                 <div class="barang-content">
-
 
                     <span class="category-label">
                         Tas
@@ -570,7 +595,6 @@ $barang = [
                     </p>
 
 
-
                     <div class="barang-info">
 
                         <span>
@@ -583,7 +607,6 @@ $barang = [
                         </span>
 
                     </div>
-
 
 
                     <div class="barang-footer">
@@ -615,7 +638,6 @@ $barang = [
 
             <article class="barang-card">
 
-
                 <div class="barang-image">
 
                     <img
@@ -631,9 +653,7 @@ $barang = [
                 </div>
 
 
-
                 <div class="barang-content">
-
 
                     <span class="category-label">
                         Peralatan
@@ -653,28 +673,29 @@ $barang = [
                     </p>
 
 
-
                     <div class="barang-info">
 
                         <span>
-                            📍 Kelas A.2.1
+                             Kelas A.2.1
                         </span>
 
 
                         <span>
-                            📅 08 Juli 2026
+                             08 Juli 2026
                         </span>
 
                     </div>
 
 
-
                     <div class="barang-footer">
 
-                            <span class="owner">
-                                👤
-                                <?= htmlspecialchars($item['pemilik']); ?>
-                            </span>
+                        <span class="owner">
+
+                            👤
+                            Zidan - XI RPLA
+
+                        </span>
+
 
                         <a
                             href="#"
@@ -698,7 +719,6 @@ $barang = [
 
             <article class="barang-card">
 
-
                 <div class="barang-image">
 
                     <img
@@ -714,9 +734,7 @@ $barang = [
                 </div>
 
 
-
                 <div class="barang-content">
-
 
                     <span class="category-label">
                         Elektronik
@@ -736,7 +754,6 @@ $barang = [
                     </p>
 
 
-
                     <div class="barang-info">
 
                         <span>
@@ -745,11 +762,10 @@ $barang = [
 
 
                         <span>
-                            📅 21 Mei 2026
+                             21 Mei 2026
                         </span>
 
                     </div>
-
 
 
                     <div class="barang-footer">
@@ -781,7 +797,6 @@ $barang = [
 
             <article class="barang-card">
 
-
                 <div class="barang-image">
 
                     <img
@@ -797,9 +812,7 @@ $barang = [
                 </div>
 
 
-
                 <div class="barang-content">
-
 
                     <span class="category-label">
                         Dompet
@@ -819,20 +832,18 @@ $barang = [
                     </p>
 
 
-
                     <div class="barang-info">
 
                         <span>
-                            📍 Kelas D.2
+                             Kelas D.2
                         </span>
 
 
                         <span>
-                            📅 13 Mei 2026
+                             13 Mei 2026
                         </span>
 
                     </div>
-
 
 
                     <div class="barang-footer">
@@ -864,7 +875,6 @@ $barang = [
 
             <article class="barang-card">
 
-
                 <div class="barang-image">
 
                     <img
@@ -880,9 +890,7 @@ $barang = [
                 </div>
 
 
-
                 <div class="barang-content">
-
 
                     <span class="category-label">
                         Peralatan
@@ -902,20 +910,18 @@ $barang = [
                     </p>
 
 
-
                     <div class="barang-info">
 
                         <span>
-                            📍 Lab Oracle
+                             Lab Oracle
                         </span>
 
 
                         <span>
-                            📅 09 Agustus 2026
+                             09 Agustus 2026
                         </span>
 
                     </div>
-
 
 
                     <div class="barang-footer">
@@ -947,7 +953,6 @@ $barang = [
 
             <article class="barang-card">
 
-
                 <div class="barang-image">
 
                     <img
@@ -963,9 +968,7 @@ $barang = [
                 </div>
 
 
-
                 <div class="barang-content">
-
 
                     <span class="category-label">
                         Aksesori
@@ -985,20 +988,18 @@ $barang = [
                     </p>
 
 
-
                     <div class="barang-info">
 
                         <span>
-                            📍 Kelas C.4.2
+                             Kelas C.4.2
                         </span>
 
 
                         <span>
-                            📅 24 September 2026
+                             24 September 2026
                         </span>
 
                     </div>
-
 
 
                     <div class="barang-footer">
@@ -1068,7 +1069,6 @@ $barang = [
                 </p>
 
             </div>
-
 
 
             <!-- IMAGE -->
@@ -1236,7 +1236,6 @@ $barang = [
             </p>
 
 
-
             <div class="cta-buttons">
 
 
@@ -1244,10 +1243,8 @@ $barang = [
                     href="#"
                     class="btn btn-orange"
                 >
-
                     &nbsp;
                     Laporkan Barang Temuan
-
                 </a>
 
 
@@ -1255,10 +1252,8 @@ $barang = [
                     href="#"
                     class="btn btn-white"
                 >
-
                     &nbsp;
                     Laporkan Barang Hilang
-
                 </a>
 
 
@@ -1294,7 +1289,6 @@ $barang = [
 
             <div class="">
 
-
                 <a
                     href="index.php"
                     class="footer-logo"
@@ -1317,26 +1311,20 @@ $barang = [
                 </p>
 
 
-
                 <!-- SOCIAL MEDIA -->
 
                 <div class="">
 
-
                     <a>
-
                     </a>
 
 
                     <a>
-
                     </a>
 
 
                     <a>
-
                     </a>
-
 
                 </div>
 
@@ -1350,7 +1338,6 @@ $barang = [
             ================================================== -->
 
             <div class="footer-column">
-
 
                 <h3>
                     Hubungi Kami
@@ -1378,7 +1365,6 @@ $barang = [
 
                 </p>
 
-
             </div>
 
 
@@ -1391,15 +1377,12 @@ $barang = [
                 class="footer-column operational-column"
             >
 
-
                 <h3>
                     Jam Operasional
                 </h3>
 
 
-
                 <div class="operational-row">
-
 
                     <span>
                         Senin - Jumat
@@ -1410,13 +1393,10 @@ $barang = [
                         07.00 - 15.00
                     </strong>
 
-
                 </div>
 
 
-
                 <div class="operational-row">
-
 
                     <span>
                         Sabtu - Minggu
@@ -1427,9 +1407,7 @@ $barang = [
                         Tutup
                     </strong>
 
-
                 </div>
-
 
             </div>
 
@@ -1472,7 +1450,6 @@ $barang = [
 
     filterButtons.forEach(function(button) {
 
-
         button.addEventListener("click", function() {
 
 
@@ -1485,9 +1462,7 @@ $barang = [
 
             this.classList.add("active");
 
-
         });
-
 
     });
 
@@ -1503,7 +1478,6 @@ $barang = [
 
     categoryButtons.forEach(function(button) {
 
-
         button.addEventListener("click", function() {
 
 
@@ -1516,9 +1490,7 @@ $barang = [
 
             this.classList.add("active");
 
-
         });
-
 
     });
 
