@@ -20,6 +20,352 @@ $user_id = $_SESSION['user_id'];
 
 /* AMBIL DATA USER */
 
+
+session_start();
+
+require_once "koneksi.php";
+
+/*
+|--------------------------------------------------------------------------
+| Cek Login
+|--------------------------------------------------------------------------
+*/
+
+if (!isset($_SESSION["user_id"])) {
+
+    header("Location: login.php");
+    exit;
+
+}
+
+$user_id = $_SESSION["user_id"];
+
+/*
+|--------------------------------------------------------------------------
+| Ambil data user
+|--------------------------------------------------------------------------
+*/
+
+$query = "
+    SELECT
+        users.id,
+        users.nisn,
+        users.nama,
+        users.kelas,
+        users.no_telepon,
+        users.role,
+        users.created_at,
+        users.updated_at,
+        login.username,
+        login.last_login,
+        login.status
+    FROM users
+
+    INNER JOIN login
+        ON users.id = login.user_id
+
+    WHERE users.id = ?
+
+    LIMIT 1
+";
+
+$stmt = mysqli_prepare(
+    $koneksi,
+    $query
+);
+
+mysqli_stmt_bind_param(
+    $stmt,
+    "i",
+    $user_id
+);
+
+mysqli_stmt_execute($stmt);
+
+$result = mysqli_stmt_get_result($stmt);
+
+if (!$result || mysqli_num_rows($result) === 0) {
+
+    session_destroy();
+
+    header("Location: login.php");
+    exit;
+
+}
+
+$user = mysqli_fetch_assoc($result);
+
+mysqli_stmt_close($stmt);
+
+?>
+
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Profil User - LostFound.sch</title>
+
+    <link
+        rel="stylesheet"
+        href="css/style.css"
+    >
+
+</head>
+
+<body class="profile-page">
+
+
+<!-- =====================================================
+     NAVBAR
+===================================================== -->
+
+<header class="navbar">
+
+    <div class="container navbar-inner">
+
+        <a
+            href="index.php"
+            class="logo"
+        >
+            LostFound<span>.sch</span>
+        </a>
+
+
+        <nav class="nav-menu">
+
+            <a href="index.php#daftar-barang">
+                Daftar Barang
+            </a>
+
+            <a href="index.php#cara-kerja">
+                Cara Kerja
+            </a>
+
+            <a href="index.php#kontak">
+                Kontak
+            </a>
+
+        </nav>
+
+
+        <div class="nav-buttons">
+
+            <a
+                href="profil.php"
+                class="btn btn-outline"
+            >
+                Profil
+            </a>
+
+            <a
+                href="logout.php"
+                class="btn btn-orange"
+            >
+                Logout
+            </a>
+
+        </div>
+
+    </div>
+
+</header>
+
+
+<!-- =====================================================
+     PROFIL
+===================================================== -->
+
+<main class="profile-container">
+
+    <div class="profile-card">
+
+        <div class="profile-header">
+
+            <div class="profile-icon">
+                <i class="fa-solid fa-user"></i>
+            </div>
+
+            <div>
+
+                <h1>
+                    Profil User
+                </h1>
+
+                <p>
+                    Informasi akun pengguna LostFound.sch
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <!-- DATA USER -->
+
+        <div class="profile-data">
+
+
+            <div class="profile-item">
+
+                <span class="profile-label">
+                    Username
+                </span>
+
+                <span class="profile-value">
+                    <?= htmlspecialchars($user["username"]); ?>
+                </span>
+
+            </div>
+
+
+            <div class="profile-item">
+
+                <span class="profile-label">
+                    NISN
+                </span>
+
+                <span class="profile-value">
+                    <?= htmlspecialchars($user["nisn"]); ?>
+                </span>
+
+            </div>
+
+
+            <div class="profile-item">
+
+                <span class="profile-label">
+                    Nama
+                </span>
+
+                <span class="profile-value">
+                    <?= htmlspecialchars($user["nama"]); ?>
+                </span>
+
+            </div>
+
+
+            <div class="profile-item">
+
+                <span class="profile-label">
+                    Kelas
+                </span>
+
+                <span class="profile-value">
+                    <?= htmlspecialchars($user["kelas"]); ?>
+                </span>
+
+            </div>
+
+
+            <div class="profile-item">
+
+                <span class="profile-label">
+                    Nomor Telepon
+                </span>
+
+                <span class="profile-value">
+
+                    <?php
+
+                    if (!empty($user["no_telepon"])) {
+
+                        echo htmlspecialchars(
+                            $user["no_telepon"]
+                        );
+
+                    } else {
+
+                        echo "-";
+
+                    }
+
+                    ?>
+
+                </span>
+
+            </div>
+
+
+            <div class="profile-item">
+
+                <span class="profile-label">
+                    Role
+                </span>
+
+                <span class="profile-value">
+                    <?= htmlspecialchars($user["role"]); ?>
+                </span>
+
+            </div>
+
+
+            <div class="profile-item">
+
+                <span class="profile-label">
+                    Status Akun
+                </span>
+
+                <span class="profile-value">
+
+                    <?php if ($user["status"] === "aktif"): ?>
+
+                        <span class="status-active">
+                            Aktif
+                        </span>
+
+                    <?php else: ?>
+
+                        <span class="status-inactive">
+                            Nonaktif
+                        </span>
+
+                    <?php endif; ?>
+
+                </span>
+
+            </div>
+
+
+        </div>
+
+
+        <!-- BUTTON -->
+
+        <div class="profile-actions">
+
+            <a
+                href="update_profil.php"
+                class="profile-edit-button"
+            >
+                Edit Profil
+            </a>
+
+            <a
+                href="logout.php"
+                class="profile-logout-button"
+            >
+                Logout
+            </a>
+
+        </div>
+
+    </div>
+
+</main>
+
+
+</body>
+
+</html>
+
 $stmt = mysqli_prepare(
     $koneksi,
     "SELECT id, nisn, nama, kelas, no_telepon, email, role
