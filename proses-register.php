@@ -12,14 +12,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'];
     $konfirmasi = $_POST['konfirmasi_password'];
 
-    // Validasi sederhana
     if ($password !== $konfirmasi) {
         $_SESSION['error'] = "Password dan konfirmasi tidak sama!";
         header("Location: register.php");
         exit;
     }
 
-    // Cek apakah username sudah dipakai
     $cek = $koneksi->prepare("SELECT id FROM login WHERE username = ?");
     $cek->bind_param("s", $username);
     $cek->execute();
@@ -32,18 +30,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $cek->close();
 
-    // Mulai transaksi (karena insert ke 2 tabel sekaligus)
     $koneksi->begin_transaction();
 
     try {
-        // 1. Insert ke tabel users
         $stmt1 = $koneksi->prepare("INSERT INTO users (nisn, nama, kelas, no_telepon, role, created_at, updated_at) VALUES (?, ?, ?, ?, 'user', NOW(), NOW())");
         $stmt1->bind_param("ssss", $nisn, $nama, $kelas, $no_telepon);
         $stmt1->execute();
 
-        $user_id = $koneksi->insert_id; // ambil id user yang baru dibuat
+        $user_id = $koneksi->insert_id;
 
-        // 2. Insert ke tabel login
         $password_hash = password_hash($password, PASSWORD_DEFAULT);
         $stmt2 = $koneksi->prepare("INSERT INTO login (user_id, username, password, status) VALUES (?, ?, ?, 'aktif')");
         $stmt2->bind_param("iss", $user_id, $username, $password_hash);

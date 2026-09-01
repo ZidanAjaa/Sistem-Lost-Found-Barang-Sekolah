@@ -1,10 +1,4 @@
 <?php
-// ======================================================
-// LOSTFOUND.SCH - LANDING PAGE
-// Sistem Lost & Found SMK PGRI 3 Tlogomas Malang
-// ======================================================
-
-// Data statistik
 $totalDilaporkan = 312;
 $totalDitemukan = 200;
 $tingkatKeberhasilan = 99;
@@ -23,7 +17,7 @@ $barang = [
         "status" => "Belum Ditemukan"
     ],
     [
-        "nama" => "Tumbler Warna Hitam & Putih",
+        "nama" => "Tumbler stiker punk Warna Hitam & Putih",
         "gambar" => "img/tumbler.jpg",
         "kategori" => "Lainnya",
         "deskripsi" => "Tumbler berwarna hitam dan putih berukuran 1000 ml yang ditempeli stiker.",
@@ -165,7 +159,7 @@ $barang = [
             <!-- Search -->
             <form class="search-box" action="index.php" method="GET">
 
-                <span class="search-icon">🔍</span>
+                <span class="search-icon"></span>
 
                 <input
                     type="text"
@@ -208,7 +202,7 @@ $barang = [
         <div class="stat-card">
 
             <div class="stat-icon">
-                📦
+                
             </div>
 
             <div class="stat-number">
@@ -225,7 +219,7 @@ $barang = [
         <div class="stat-card">
 
             <div class="stat-icon">
-                ✅
+                
             </div>
 
             <div class="stat-number">
@@ -242,7 +236,7 @@ $barang = [
         <div class="stat-card">
 
             <div class="stat-icon">
-                🏆
+                
             </div>
 
             <div class="stat-number">
@@ -259,7 +253,7 @@ $barang = [
         <div class="stat-card">
 
             <div class="stat-icon">
-                ⚡
+                
             </div>
 
             <div class="stat-number">
@@ -409,7 +403,7 @@ $barang = [
                         <div class="barang-footer">
 
                             <span class="owner">
-                                👤
+                                
                                 <?= htmlspecialchars($item['pemilik']); ?>
                             </span>
 

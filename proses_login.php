@@ -27,23 +27,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (password_verify($password, $data['password'])) {
-            // Login sukses, simpan data ke session
             $_SESSION['user_id'] = $data['user_id'];
             $_SESSION['username'] = $data['username'];
             $_SESSION['nama'] = $data['nama'];
             $_SESSION['role'] = $data['role'];
 
-            // Update last_login
             $update = $koneksi->prepare("UPDATE login SET last_login = NOW() WHERE id = ?");
             $update->bind_param("i", $data['id']);
             $update->execute();
 
-            // Redirect sesuai role
-            if ($data['role'] === 'admin') {
-                header("Location: dashboard.php");
-            } else {
-                header("Location: dashboard.php");
-            }
+            header("Location: dashboard.php");
             exit;
 
         } else {
