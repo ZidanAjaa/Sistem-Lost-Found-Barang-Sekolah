@@ -159,7 +159,7 @@ mysqli_stmt_close($stmt);
         <div class="nav-buttons">
 
             <a
-                href="profil.php"
+                href="profil_user.php"
                 class="btn btn-outline"
             >
                 Profil
@@ -342,7 +342,7 @@ mysqli_stmt_close($stmt);
         <div class="profile-actions">
 
             <a
-                href="update_profil.php"
+                href="update_profil_.php"
                 class="profile-edit-button"
             >
                 Edit Profil
@@ -622,7 +622,7 @@ if (!$user) {
 
 
             <form
-                action="proses-profil.php"
+                action="proses-profil_user.php"
                 method="POST"
             >
 

@@ -193,7 +193,7 @@ $barang = [
 
                 <!-- Jika sudah login -->
 
-                <a href="profil.php">
+                <a href="profil_user.php">
                     Profil User
                 </a>
 

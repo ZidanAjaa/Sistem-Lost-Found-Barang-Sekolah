@@ -31,7 +31,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 WHERE login.username = ?
                 LIMIT 1";
 
-        $stmt = mysqli_prepare($conn, $sql);
+        $stmt = mysqli_prepare($koneksi, $sql);
 
         mysqli_stmt_bind_param($stmt, "s", $username);
         mysqli_stmt_execute($stmt);
@@ -63,7 +63,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                            SET last_login = NOW()
                            WHERE id = ?";
 
-                $stmtUpdate = mysqli_prepare($conn, $update);
+                $stmtUpdate = mysqli_prepare($koneksi, $update);
                 mysqli_stmt_bind_param(
                     $stmtUpdate,
                     "i",
@@ -71,7 +71,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 );
                 mysqli_stmt_execute($stmtUpdate);
 
-                header("Location: profil.php");
+                header("Location: profil_user.php");
                 exit;
 
             } else {
