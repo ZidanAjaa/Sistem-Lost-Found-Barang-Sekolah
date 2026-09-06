@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once "koneksi.php";
+include "koneksi.php";
 
 $error = "";
 
@@ -208,8 +208,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             <i class="fa-solid fa-arrow-left"></i>
 
-            Kembali ke halaman utama
-
+            Kembali ke halaman utama 
+ <p>Belum punya akun?<a href="register.php">Daftar di sini</a></p>
         </a>
 
     </div>
