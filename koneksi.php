@@ -5,17 +5,17 @@ $user = "root";
 $password = "";
 $database = "lost_found";
 
-$conn = mysqli_connect(
+$koneksi = mysqli_connect(
     $host,
     $user,
     $password,
     $database
 );
 
-if (!$conn) {
+if (!$koneksi) {
     die("Koneksi database gagal: " . mysqli_connect_error());
 }
 
-mysqli_set_charset($conn, "utf8mb4");
+mysqli_set_charset($koneksi, "utf8mb4");
 
 ?>

@@ -133,9 +133,17 @@ $barang = [
             <a href="#kontak">
                 Kontak
             </a>
+
            
          <?php if ($isLoggedIn): ?>
           <a href="profil_user.php">
+
+            <?php if ($isLoggedIn): ?>
+
+                <!-- Jika sudah login -->
+
+                <a href="profil_user.php">
+
                     Profil User
                 </a>
                 <?php else: ?>
