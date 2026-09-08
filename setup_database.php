@@ -2,7 +2,7 @@
 $host = "localhost";
 $user = "root";
 $pass = "";
-$database = "lostfound";
+$database = "lost_found";
 
 $conn = mysqli_connect($host, $user, $pass);
 

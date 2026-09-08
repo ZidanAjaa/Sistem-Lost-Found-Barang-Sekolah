@@ -1,0 +1,126 @@
+/* REGISTER */
+.register-page {
+    min-height: 100vh;
+    background: #f8f9ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 15px;
+}
+
+.register-container {
+    width: 100%;
+    max-width: 500px;
+}
+
+.register-card {
+    background: #fff;
+    border: 1px solid #e3e0ed;
+    border-radius: 15px;
+    padding: 40px;
+    box-shadow: 0 8px 25px rgba(35, 23, 95, 0.12);
+}
+
+.register-card h1 {
+    text-align: center;
+    color: #251273;
+    font-size: 30px;
+    margin-bottom: 8px;
+}
+
+.register-description {
+    text-align: center;
+    color: #736b9d;
+    font-size: 14px;
+    margin-bottom: 28px;
+}
+
+.register-form {
+    display: flex;
+    flex-direction: column;
+}
+
+.register-group {
+    margin-bottom: 16px;
+}
+
+.register-group label {
+    display: block;
+    color: #2f1b80;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 7px;
+}
+
+.register-group input,
+.register-group select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    border: 1px solid #d8d5e7;
+    border-radius: 10px;
+    outline: none;
+    background: #fff;
+    color: #333;
+    font-size: 14px;
+}
+
+.register-group input:focus,
+.register-group select:focus {
+    border-color: #3b28df;
+}
+
+.register-button {
+    width: 100%;
+    border: none;
+    background: #3b28df;
+    color: #fff;
+    padding: 13px;
+    margin-top: 5px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.register-button:hover {
+    background: #2e20b7;
+}
+
+.register-login {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 15px;
+    color: #3b28df;
+}
+
+.register-login span {
+    color: #3b28df;
+    font-weight: 500;
+}
+
+.register-login a {
+    color: #3b28df;
+    font-weight: 600;
+    text-decoration: none;
+    margin-left: 5px;
+}
+
+.register-login a:hover {
+    color: #ff6b1a;
+}
+
+@media (max-width: 600px) {
+    .register-page {
+        padding: 25px 15px;
+    }
+
+    .register-card {
+        padding: 30px 20px;
+    }
+
+    .register-card h1 {
+        font-size: 26px;
+    }
+}

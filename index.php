@@ -1,759 +1,400 @@
 <?php
 session_start();
-// Mengecek apakah user sudah login
-$isLoggedIn = isset($_SESSION['login']) && $_SESSION['login'] === true;
+
+$isLoggedIn = isset($_SESSION["login"]) && $_SESSION["login"] === true;
 
 $totalDilaporkan = 312;
 $totalDitemukan = 200;
 $tingkatKeberhasilan = 99;
 $rataProses = "2.4 Hari";
 
-// DATA BARANG
 $barang = [
     [
         "nama" => "Tas Ransel Hitam",
         "gambar" => "img/tas.jpg",
-        "kategori" => "Tas & Dompet",
-        "deskripsi" => "Tas ransel warna hitam dengan gantungan kunci kecil di bagian depan.",
-        "lokasi" => "Kelas B.3",
+        "kategori" => "Tas",
+        "deskripsi" => "Tas ransel warna hitam dengan gantungan kunci hello kitty.",
+        "lokasi" => "Kelas XI B 3",
         "tanggal" => "20 Agustus 2026",
-        "pemilik" => "Rizky A. - XI DKVA",
+        "pemilik" => "Rizky A - XI DKVA",
         "status" => "Belum Ditemukan"
     ],
-
     [
         "nama" => "Tumbler Warna Hitam & Putih",
         "gambar" => "img/tumbler.jpg",
-        "kategori" => "Lainnya",
-        "deskripsi" => "Tumbler berwarna hitam dan putih berukuran 1000 ml yang ditempeli stiker.",
+        "kategori" => "Peralatan",
+        "deskripsi" => "Tumbler berwarna hitam dan putih berukuran 1000 ml.",
         "lokasi" => "Kelas A.2.1",
         "tanggal" => "08 Juli 2026",
         "pemilik" => "Zidan - XI RPLA",
         "status" => "Ditemukan"
     ],
-
     [
         "nama" => "AirPods Pro Putih",
         "gambar" => "img/airpods.jpg",
         "kategori" => "Elektronik",
         "deskripsi" => "Earphone Apple warna putih yang hilang saat olahraga.",
-        "lokasi" => "Lapangan C",
-        "tanggal" => "22 Mei 2026",
-        "pemilik" => "Nesya R. - X TKJA",
+        "lokasi" => "Kelas C 3.2",
+        "tanggal" => "21 Mei 2026",
+        "pemilik" => "Nesya R - TKJ A",
         "status" => "Ditemukan"
     ],
-
     [
         "nama" => "Dompet Warna Hitam",
         "gambar" => "img/dompet.jpg",
-        "kategori" => "Tas & Dompet",
-        "deskripsi" => "Dompet berwarna hitam dengan gantungan kunci berbentuk love.",
+        "kategori" => "Dompet",
+        "deskripsi" => "Dompet berwarna hitam yang memiliki gantungan kecil berbentuk love.",
         "lokasi" => "Kelas D.2",
         "tanggal" => "13 Mei 2026",
-        "pemilik" => "Rizky H. - XI RPLB",
-        "status" => "Ditemukan"
+        "pemilik" => "Rizky H - XI RPLB",
+        "status" => "Belum Ditemukan"
     ],
-
     [
         "nama" => "Bekal Makanan",
         "gambar" => "img/bekal.jpg",
-        "kategori" => "Lainnya",
+        "kategori" => "Peralatan",
         "deskripsi" => "Bekal makanan berwarna cokelat yang hilang saat istirahat.",
         "lokasi" => "Lab Oracle",
         "tanggal" => "09 Agustus 2026",
         "pemilik" => "Yona - XI DKVA",
         "status" => "Belum Ditemukan"
     ],
-
     [
         "nama" => "Kunci Motor",
         "gambar" => "img/kunci.jpg",
-        "kategori" => "Lainnya",
-        "deskripsi" => "Kunci motor dengan gantungan karakter yang ditemukan di sekitar sekolah.",
+        "alt" => "Kunci Motor",
+        "kategori" => "Aksesoris",
+        "deskripsi" => "Kunci motor dengan gantungan kunci sederhana yang hilang.",
         "lokasi" => "Kelas C.4.2",
         "tanggal" => "24 September 2026",
-        "pemilik" => "Putra R. - X KJA",
+        "pemilik" => "Putra R - XI KJ",
         "status" => "Ditemukan"
     ]
 ];
-
 ?>
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
- 
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-     <title>
-        LostFound.sch - SMK PGRI 3 Tlogomas Malang
-    </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LostFound.sch - SMK PGRI 3 Tlogomas Malang</title>
     <meta
         name="description"
         content="Platform resmi pelaporan barang hilang dan temuan di SMK PGRI 3 Tlogomas Malang."
     >
-    <link
-        rel="stylesheet"
-        href="css/style.css"
-    >
+
+    <link rel="stylesheet" href="css/style.css">
     <link
         rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     >
 </head>
+
 <body>
+
 <header class="navbar">
-   <div class="container navbar-inner">
-      <!-- LOGO -->
-       <a
-            href="index.php"
-            class="logo"
-        >
-         <div class="">
-                <i class=""></i>
-            </div>
-            <div class="logo-text">
-                LostFound<span>.sch</span>
-            </div>
+    <div class="container navbar-inner">
 
+        <a href="index.php" class="logo">
+            <div><i class=""></i></div>
+            <div class="logo-text">LostFound<span>.sch</span></div>
         </a>
+
         <nav class="nav-menu">
-
-            <a href="#daftar-barang">
-                Daftar Barang
-            </a>
-            
-            <a href="#cara-kerja">
-                Cara Kerja
-            </a>
-            
-            <a href="#kontak">
-                Kontak
-            </a>
-
-           
-         <?php if ($isLoggedIn): ?>
-          <a href="profil_user.php">
+            <a href="#daftar-barang">Daftar Barang</a>
+            <a href="#cara-kerja">Cara Kerja</a>
+            <a href="#kontak">Kontak</a>
 
             <?php if ($isLoggedIn): ?>
-
-                <!-- Jika sudah login -->
-
-                <a href="profil_user.php">
-
-                    Profil User
-                </a>
-                <?php else: ?>
-               <a href="login.php">
-                    Login
-                </a>
-                 <?php endif; ?>
+                <a href="profil_user.php">Profil User</a>
+            <?php else: ?>
+                <a href="login.php">Login</a>
+            <?php endif; ?>
         </nav>
-         <div class="nav-buttons">
-           <a
-                href="#"
-                class="btn btn-outline"
-            >
-                Lapor Hilang
-            </a>
-            <a
-                href="#"
-                class="btn btn-orange"
-            >
-                Lapor Temuan
-            </a>
 
-        </div></div>
+        <div class="nav-buttons">
+            <a href="#" class="btn btn-outline">Lapor Hilang</a>
+            <a href="#" class="btn btn-orange">Lapor Temuan</a>
+        </div>
+
+    </div>
 </header>
 
 <section class="hero">
-
     <div class="container hero-inner">
 
-    <div class="hero-content">
-             <h1>Kehilangan
-                <span>
-                    Barang
-                </span>
-
-                <strong>
-                    di Sekolah?
-                </strong>
-
+        <div class="hero-content">
+            <h1>
+                Kehilangan
+                <span>Barang</span>
+                <strong>di Sekolah?</strong>
             </h1>
+
             <p class="hero-description">
                 Platform resmi pelaporan barang hilang dan temuan
                 di SMK PGRI 3 Tlogomas Malang. Cepat, mudah, dan
                 terpercaya untuk membantu siswa dan staf menemukan
-                kembali barang mereka.</p>
-<!-- SEARCH -->
-             <form
-                class="search-box"
-                action="#"
-                method="GET"
-            >
-            <span class="search-icon">
-                </span>
+                kembali barang mereka.
+            </p>
+
+            <form class="search-box" action="#" method="GET">
+                <span class="search-icon"></span>
                 <input
                     type="text"
                     name="search"
                     placeholder="Cari nama barang, lokasi..."
                 >
-                <button type="submit">
-                    Cari
-                </button>
+                <button type="submit">Cari</button>
             </form>
-         </div>
-
-         <div class="hero-image">
-            <img
-                src="img/siswa1.png"
-                alt="Siswa mencari barang hilang"
-            >
         </div>
+
+        <div class="hero-image">
+            <img src="img/siswa1.png" alt="Siswa mencari barang hilang">
+        </div>
+
     </div>
 </section>
 
 <section class="statistics">
-<div class="container statistics-grid">
+    <div class="container statistics-grid">
+
         <div class="stat-card">
-        <div class="stat-icon">
+            <div class="stat-icon"></div>
+            <div class="stat-number"><?= $totalDilaporkan; ?></div>
+            <div class="stat-title">Barang Dilaporkan</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon"></div>
+            <div class="stat-number"><?= $totalDitemukan; ?></div>
+            <div class="stat-title">Barang Ditemukan</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon"></div>
+            <div class="stat-number"><?= $tingkatKeberhasilan; ?>%</div>
+            <div class="stat-title">Tingkat Keberhasilan</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon"></div>
+            <div class="stat-number">&lt; 3 Hari</div>
+            <div class="stat-title">Rata - Rata Proses</div>
+        </div>
+
     </div>
-       <div class="stat-number">
-                <?= $totalDilaporkan; ?>
-            </div>
-              <div class="stat-title">
-                Barang Dilaporkan
-            </div></div>
-
-<div class="stat-card">
-        <div class="stat-icon">
-                </div>
-                <div class="stat-number">
-                <?= $totalDitemukan; ?>
-            </div>
-            <div class="stat-title">
-                Barang Ditemukan
-            </div></div>
-
-<div class="stat-card">
-    <div class="stat-icon">
-                </div>
-    <div class="stat-number">
-                <?= $tingkatKeberhasilan; ?>%
-            </div>
-         <div class="stat-title">
-                Tingkat Keberhasilan
-            </div></div>
-
-    <div class="stat-card">
-                  <div class="stat-icon">
-                </div>
- <div class="stat-number">
-                &lt; 3 Hari
-            </div>
-
-            <div class="stat-title">
-                Rata - Rata Proses
-            </div></div>
-</div>
 </section>
 
-<section
-    class="barang-section"
-    id="daftar-barang"
->
-   <div class="container">
-     <div class="section-header">
-         <div>
-                <h2>
-                    Daftar Barang
-                </h2>
-                 <p>
-                    6 barang ditemukan
-                </p>
-            </div>
-    
-            <div class="filter-status">
-            <button
-                    class="filter-btn active"
-                    type="button"
-                >  Semua
-                </button>
-              
-                <button
-                    class="filter-btn"
-                    type="button"
-                >
-                Hilang
-                </button>
-             
-                <button
-                    class="filter-btn"
-                    type="button"
-                >
-                    Ditemukan
-                </button>
-</div></div>
+<section class="barang-section" id="daftar-barang">
+    <div class="container">
 
-<div class="category-list">
-        <button
-                class="category-btn active"
-                type="button"
-            >
-                Semua
-            </button>
-       <button
-                class="category-btn"
-                type="button"
-            >
-                Tas & Dompet
-            </button>
-            
-            <button
-                class="category-btn"
-                type="button"
-            >
-                Elektronik
-            </button>
-      <button
-                class="category-btn"
-                type="button"
-            >
-                Alat Tulis
-            </button>
-            <button
-                class="category-btn"
-                type="button"
-            >
-                Pakaian
-            </button>
-         <button
-                class="category-btn"
-                type="button"
-            >
-                Dokumen
-            </button>
+        <div class="section-header">
+            <div>
+                <h2>Daftar Barang</h2>
+                <p><?= count($barang); ?> barang ditemukan</p>
+            </div>
+
+            <div class="filter-status">
+                <button class="filter-btn active" type="button">Semua</button>
+                <button class="filter-btn" type="button">Hilang</button>
+                <button class="filter-btn" type="button">Ditemukan</button>
+            </div>
+        </div>
+
+        <div class="category-list">
+            <button class="category-btn active" type="button">Semua</button>
+            <button class="category-btn" type="button">Tas & Dompet</button>
+            <button class="category-btn" type="button">Elektronik</button>
+            <button class="category-btn" type="button">Alat Tulis</button>
+            <button class="category-btn" type="button">Pakaian</button>
+            <button class="category-btn" type="button">Dokumen</button>
         </div>
 
         <div class="barang-grid">
-      <article class="barang-card">
-           <div class="barang-image">
-                  <img
-                        src="img/tas.jpg"
-                        alt="Tas Ransel Hitam"
-                    >
-                    <span class="status-badge status-lost">
-                        Belum Ditemukan
-                    </span>
-                 </div>
-<div class="barang-content">
-    <span class="category-label">
-                        Tas
-                    </span>
-                   <h3>
-                        Tas Ransel Hitam
-                    </h3>
-                <p class="barang-description">
-                        Tas ransel warna hitam dengan gantungan kunci hello kitty.
-                    </p>
-                    <div class="barang-info">
-                        <span>
-                             Kelas XI B 3
-                        </span>
-                        <span>
-                             20 Agustus 2026
+
+            <?php foreach ($barang as $item): ?>
+                <article class="barang-card">
+
+                    <div class="barang-image">
+                        <img
+                            src="<?= htmlspecialchars($item["gambar"]); ?>"
+                            alt="<?= htmlspecialchars($item["nama"]); ?>"
+                        >
+
+                        <span class="status-badge <?= $item["status"] === "Ditemukan" ? "status-found" : "status-lost"; ?>">
+                            <?= htmlspecialchars($item["status"]); ?>
                         </span>
                     </div>
-<div class="barang-footer"> 
-    <span class="owner">
-            Rizky A - XI DKVA
-    </span>
-            <a
-               href="#"
-               class="detail-btn"
-                        >
-                        Lihat Detail
-                        </a>
-                    </div></div>
-</article>
-      <article class="barang-card">
-        <div class="barang-image">
-            <img
-                src="img/tumbler.jpg"
-                alt="Tumbler Warna Hitam dan Putih"
-                    >
-                    <span class="status-badge status-found">
-                        Ditemukan
-                    </span>
-                </div>
-<div class="barang-content">
-                 <span class="category-label">
-                        Peralatan
-                    </span>
-                    <h3>
-                        Tumbler Warna Hitam & Putih
-                    </h3>
-                    <p class="barang-description">
-                        Tumbler berwarna hitam dan putih berukuran 1000 ml
-                    </p>
-<div class="barang-info">
-                  <span>
-                    Kelas A.2.1
-                   </span>
-                   <span>
-                    08 Juli 2026
-                    </span>
-                </div>
-<div class="barang-footer">
-    <span class="owner">
-            Zidan - XI RPLA
-        </span>
-         <a
-            href="#"
-            class="detail-btn"
-                        >
-                        Lihat Detail
-                        </a>
+
+                    <div class="barang-content">
+                        <span class="category-label">
+                            <?= htmlspecialchars($item["kategori"]); ?>
+                        </span>
+
+                        <h3><?= htmlspecialchars($item["nama"]); ?></h3>
+
+                        <p class="barang-description">
+                            <?= htmlspecialchars($item["deskripsi"]); ?>
+                        </p>
+
+                        <div class="barang-info">
+                            <span><?= htmlspecialchars($item["lokasi"]); ?></span>
+                            <span><?= htmlspecialchars($item["tanggal"]); ?></span>
+                        </div>
+
+                        <div class="barang-footer">
+                            <span class="owner">
+                                <?= htmlspecialchars($item["pemilik"]); ?>
+                            </span>
+
+                            <a href="#" class="detail-btn">Lihat Detail</a>
+                        </div>
                     </div>
-                </div>
-            </article>
-    
-<article class="barang-card">
-    <div class="barang-image">
-                    <img
-                        src="img/airpods.jpg"
-                        alt="AirPods Pro Putih"
-                    >
-                    <span class="status-badge status-found">
-                        Ditemukan
-                    </span>
-                </div>
-                <div class="barang-content">
-<span class="category-label">
-                        Elektronik
-                    </span>
-                    <h3>
-                        AirPods Pro Putih
-                    </h3>
-                    <p class="barang-description">
-                        Earphone Apple warna putih yang hilang saat olahraga.
+
+                </article>
+            <?php endforeach; ?>
+
+        </div>
+    </div>
+</section>
+
+<section class="cara-section" id="cara-kerja">
+    <div class="container">
+
+        <div class="cara-top">
+            <div class="cara-text">
+                <h2>Konsep Cara Kerja</h2>
+
+                <p>
+                    Proses yang sederhana, cepat, dan mudah dipahami untuk membantu
+                    kamu melaporkan barang yang hilang, mencari barang yang ditemukan,
+                    mencocokkan informasi barang dengan pemiliknya, hingga membantu
+                    mengembalikan barang temuan kepada pemiliknya dengan aman dan terpercaya.
                 </p>
-                <div class="barang-info">
-                    <span>
-                      Kelas C 3.2
-                        </span>
-                        <span>
-                             21 Mei 2026
-                        </span>
-                    </div>
-                     <div class="barang-footer">
-                        <span class="owner">
-                            Nesya R - TKJ A
-                        </span>
-                        <a
-                            href="#"
-                            class="detail-btn"
-                        >
-                        Lihat Detail
-                        </a>
-                    </div>
-                </div>
-            </article>
-            
-  <article class="barang-card">
-        <div class="barang-image">
-            <img
-                 src="img/dompet.jpg"
-                alt="Dompet Warna Hitam"
-                    >
-                    <span class="status-badge status-lost">
-                        Belum Ditemukan
-                    </span>
-                </div>
-<div class="barang-content">
-        <span class="category-label">
-                        Dompet
-                    </span>
-                    <h3>
-                        Dompet Warna Hitam
-                    </h3>
-                    <p class="barang-description">
-                    Dompet berwarna hitam yang memiliki gantungan kecil berbentuk love
+            </div>
+
+            <div class="cara-image">
+                <img src="img/siswa2.png" alt="Siswa mencari barang">
+            </div>
+        </div>
+
+        <div class="steps">
+
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <h3>Laporkan</h3>
+                <p>
+                    Isi formulir laporan barang hilang atau barang yang kamu temukan
+                    dengan detail yang lengkap.
                 </p>
-        <div class="barang-info">
-            <span>
-                Kelas D.2
-            </span>
-            <span>
-             13 Mei 2026
-            </span>
-        </div>
-<div class="barang-footer">
-          <span class="owner">
-             Rizky H - XI RPLB
-                        </span>
-                        <a
-                            href="#"
-                            class="detail-btn"
-                        >
-                         Lihat Detail
-                        </a>
-                    </div>
-                </div>
-            </article>
-        <article class="barang-card">
-            <div class="barang-image">
-            <img
-                src="img/bekal.jpg"
-                alt="Bekal Makanan"
-    >
- <span class="status-badge status-lost">
-                Belum Ditemukan
-          </span>
-    </div>
-<div class="barang-content">
-      <span class="category-label">
-           Peralatan
-    </span>
-     <h3>
-           Bekal Makanan
-    </h3>
-              <p class="barang-description">
-                  Bekal makanan berwarna cokelat yang hilang saat istirahat.
-           </p>
-            <div class="barang-info">
-        <span>
-               Lab Oracle
-    </span>
-          <span>
-              09 Agustus 2026
-    </span>
-</div>
-           <div class="barang-footer">
-                <span class="owner">
-                    Yona - XI DKVA
-         </span>
-    <a
-         href="#"
-             class="detail-btn"
-    >
-           Lihat Detail
-        </a>
             </div>
-    </div>
-          </article>
-        <article class="barang-card">
-            <div class="barang-image">
-             <img
-               src="img/kunci.jpg"
-            alt="Kunci Motor"
-        >
-            <span class="status-badge status-found">
-              Ditemukan
-         </span>
-                  </div>
-                  <div class="barang-content">
-                       <span class="category-label">
-                    Aksesoris
-            </span>
-       <h3>
-             Kunci Motor
-       </h3>
-               <p class="barang-description">
-               Kunci motor dengan gantungan kunci sederhana yang hilang.
-       </p>
-              <div class="barang-info">
-         <span>
-            Kelas C.4.2
-      </span>
-  <span>
-           24 September 2026
-       </span>
-    </div>
-           <div class="barang-footer">
-    <span class="owner">
-           Putra R - XI KJ
-    </span>
-    <a
-       href="#"
-             class="detail-btn"
-     >
-         Lihat Detail
-    </a>
-        </div>
-    </div>
-           </article>
-    </div>
-        </div>
-           </section>
-    <section
-          class="cara-section"
-             id="cara-kerja"
-    >
-           <div class="container">
-     <div class="cara-top">
-          <div class="cara-text">
-    <h2> Konsep Cara Kerja </h2>
-         <p>
-             Proses yang sederhana, cepat, dan mudah dipahami untuk membantu kamu melaporkan barang yang hilang, mencari barang yang 
-             ditemukan, mencocokkan informasi barang dengan pemiliknya, hingga membantu mengembalikan barang temuan kepad 
-             pemiliknya dengan aman dan terpercaya.
-        </p>
-    </div>
-         <div class="cara-image">
-       <img
-          src="img/siswa2.png"
-          alt="Siswa mencari barang"
-    >
-           </div>
-    </div>
-         <div class="steps">
-        <div class="step-card">
-    <div class="step-number">
-               1
-    </div>
-             <h3>
-              Laporkan
-          </h3>
-       <p>
-            Isi formulir laporan barang hilang atau barang yang kamu temukan dengan detail yang lengkap.
-        </p>
-      </div>
-              <div class="step-card">
-        <div class="step-number">
-             2
-       </div>
-                <h3> Cari & Cocokan </h3>
-       <p>
-          Tim kami akan mencocokkan laporan kehilangan dengan barang temuan yang masuk.
-      </p>
-    </div>
-              <div class="step-card">
-        <div class="step-number">
-             3
-        </div>
-            <h3> Dihubungi </h3>
-    <p>
-           Jika ada kecocokan, kami akan menghubungi pemilik untuk proses pengambilan barang.
-    </p>
-         </div>
-           <div class="step-card">
-             <div class="step-number">
-                    4
+
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <h3>Cari & Cocokan</h3>
+                <p>
+                    Tim kami akan mencocokkan laporan kehilangan dengan barang temuan
+                    yang masuk.
+                </p>
             </div>
-    <h3> Ambil Barang</h3>
-    <p>
-    Datang ke ruang piket dengan membawa bukti kepemilikan untuk mengambil barangmu kembali.
-    </p>
-       </div>
+
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <h3>Dihubungi</h3>
+                <p>
+                    Jika ada kecocokan, kami akan menghubungi pemilik untuk proses
+                    pengambilan barang.
+                </p>
             </div>
-       </div>
-             </section>
-        <section class="cta-section">
-            <div class="container">
-  <div class="cta-box">
-    <h2> Menemukan Barang Orang Lain? </h2>
-    <p>
-    Jadilah pahlawan bagi temanmu! Jika kamu menemukan barang milik orang lain di lingkungan sekolah, segera laporkan barang
-    tersebut melalui LostFound.sch agar informasi dapat diketahui oleh pemiliknya dan barang tersebut bisa segera dikembalikan dengan aman
-    serta membantu menciptakan lingkungan sekolah yang lebih peduli, bertanggung jawab, dan saling membantu antarwarga sekolah.
-        </p>
+
+            <div class="step-card">
+                <div class="step-number">4</div>
+                <h3>Ambil Barang</h3>
+                <p>
+                    Datang ke ruang piket dengan membawa bukti kepemilikan
+                    untuk mengambil barangmu kembali.
+                </p>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<section class="cta-section">
+    <div class="container">
+
+        <div class="cta-box">
+            <h2>Menemukan Barang Orang Lain?</h2>
+
+            <p>
+                Jadilah pahlawan bagi temanmu! Jika kamu menemukan barang milik orang
+                lain di lingkungan sekolah, segera laporkan barang tersebut melalui
+                LostFound.sch agar informasi dapat diketahui oleh pemiliknya dan barang
+                tersebut bisa segera dikembalikan dengan aman serta membantu menciptakan
+                lingkungan sekolah yang lebih peduli, bertanggung jawab, dan saling membantu
+                antarwarga sekolah.
+            </p>
+
             <div class="cta-buttons">
-    <a
-         href="#"
-              class="btn btn-orange"
-    >
-    &nbsp;
-           Laporkan Barang Temuan
-    </a>
-    <a
-          href="#"
-               class="btn btn-white"
-    >
-    &nbsp;
-           Laporkan Barang Hilang
-       </a>
-          </div>
-      </div>
-          </div>
-          </section>
-      <footer
-             class="footer"
-      id="kontak"
-    >
-           <div class="container">
-                   <div class="footer-grid">
-        <div class="">
-    <a
-          href="index.php"
-            class="footer-logo"
-    >
-    LostFound<span>.sch</span>
-      </a>
-    <p> Platform resmi Lost & Found SMK PGRI 3 Tlogomas Malang yang dirancang untuk membantu siswa dan staf melaporkan,
-    mencari, serta menemukan kembali barang berharga mereka dengan proses yang mudah,cepat, aman, dan terpercaya.</p>
-          <div class="">
-         <a>
-               </a>
-       <a>
-          </a>
-      <a>
-            </a>
-       </div>
+                <a href="#" class="btn btn-orange">Laporkan Barang Temuan</a>
+                <a href="#" class="btn btn-white">Laporkan Barang Hilang</a>
             </div>
+        </div>
+
+    </div>
+</section>
+
+<footer class="footer" id="kontak">
+    <div class="container">
+
+        <div class="footer-grid">
+
+            <div>
+                <a href="index.php" class="footer-logo">
+                    LostFound<span>.sch</span>
+                </a>
+
+                <p>
+                    Platform resmi Lost & Found SMK PGRI 3 Tlogomas Malang
+                    yang dirancang untuk membantu siswa dan staf melaporkan,
+                    mencari, serta menemukan kembali barang berharga mereka
+                    dengan proses yang mudah, cepat, aman, dan terpercaya.
+                </p>
+
+                <div>
+                    <a></a>
+                    <a></a>
+                    <a></a>
+                </div>
+            </div>
+
             <div class="footer-column">
-    <h3> Hubungi Kami </h3>
-             <p> Jln Tlogomas Gang 9 Nomor 29, Malang </p>
-        <p> Nomor telepon: (0341) 554383 </p>
-            <p> mail.smkpgri3malang@gmail.com</p>
-       </div>
-    <div
-              class="footer-column operational-column"
-    >
-    <h3> Jam Operasional </h3>
-              <div class="operational-row">
-     <span>
-            Senin - Jumat
-    </span>
-        <strong>
-                07.00 - 15.00
-          </strong>
+                <h3>Hubungi Kami</h3>
+                <p>Jln Tlogomas Gang 9 Nomor 29, Malang</p>
+                <p>Nomor telepon: (0341) 554383</p>
+                <p>mail.smkpgri3malang@gmail.com</p>
+            </div>
+
+            <div class="footer-column operational-column">
+                <h3>Jam Operasional</h3>
+
+                <div class="operational-row">
+                    <span>Senin - Jumat</span>
+                    <strong>07.00 - 15.00</strong>
+                </div>
+
+                <div class="operational-row">
+                    <span>Sabtu - Minggu</span>
+                    <strong>Tutup</strong>
+                </div>
+            </div>
+
+        </div>
     </div>
-             <div class="operational-row">
-        <span>
-                  Sabtu - Minggu
-          </span>
-       <strong>
-               Tutup
-           </strong>
-          </div>
-    </div>
-</div>
-      </div>
- </footer>
- <script>
-    document.addEventListener("DOMContentLoaded",()=>{
-    const search=document.querySelector(".search-box input"),form=document.querySelector(".search-box"),cards=document.querySelectorAll(".barang-card"),statusBtns=document.querySelectorAll(".filter-btn"),categoryBtns=document.querySelectorAll(".category-btn"),count=document.querySelector(".section-header p");
-    let status="Semua",category="Semua";
-    function filterBarang(){
-    const key=search.value.toLowerCase().trim();let total=0;
-    cards.forEach(card=>{
-    const text=card.textContent.toLowerCase(),kat=card.querySelector(".category-label").textContent.trim().toLowerCase(),badge=card.querySelector(".status-badge"),itemStatus=badge.classList.contains("status-found")?"Ditemukan":"Hilang";
-    const okSearch=!key||text.includes(key),okStatus=status==="Semua"||itemStatus===status,okCategory=category==="Semua"||(category==="Tas & Dompet"?(kat==="tas"||kat==="dompet"):kat===category.toLowerCase()),show=okSearch&&okStatus&&okCategory;
-    card.style.display=show?"":"none";if(show) total++;
-    });
-    count.textContent=total+" barang ditemukan";
-    }
-    form.addEventListener("submit",e=>{e.preventDefault();filterBarang()});
-    search.addEventListener("input",filterBarang);
-    statusBtns.forEach(btn=>btn.addEventListener("click",()=>{statusBtns.forEach(b=>b.classList.remove("active"));btn.classList.add("active");status=btn.textContent.trim();filterBarang()}));
-    categoryBtns.forEach(btn=>btn.addEventListener("click",()=>{categoryBtns.forEach(b=>b.classList.remove("active"));btn.classList.add("active");category=btn.textContent.trim();filterBarang()}));
-    filterBarang();
-    });
-      </script>
-  </body>
+</footer>
+
+<script src="js/script.js"></script>
+
+</body>
 </html>

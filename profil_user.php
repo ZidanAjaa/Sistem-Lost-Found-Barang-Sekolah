@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 require_once "koneksi.php";
@@ -11,7 +10,7 @@ if (!isset($_SESSION["user_id"])) {
 
 $user_id = $_SESSION["user_id"];
 
-// Ambil data user dari tabel users dan login
+// Ambil data user
 $sql = "SELECT 
             users.id,
             users.nisn,
@@ -55,13 +54,12 @@ if (!$user) {
 <head>
     <meta charset="UTF-8">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Profil User - LostFound.sch</title>
 
-    <link rel="stylesheet"
-          href="css/style.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/profil.css">
 
     <!-- Font Awesome -->
     <link rel="stylesheet"
@@ -70,82 +68,29 @@ if (!$user) {
 
 <body>
 
-    <!-- NAVBAR -->
-    <nav class="navbar">
-
-        <div class="navbar-container">
-
-            <a href="index.php" class="logo">
-                LostFound<span>.sch</span>
-            </a>
-
-            <div class="nav-menu">
-
-                <a href="index.php">
-                    Beranda
-                </a>
-
-                <a href="index.php#barang">
-                    Daftar Barang
-                </a>
-
-                <a href="index.php#cara-kerja">
-                    Cara Kerja
-                </a>
-
-                <a href="index.php#kontak">
-                    Kontak
-                </a>
-
-                <a href="profil_user.php"
-                   class="btn btn-outline">
-                    Profil
-                </a>
-
-                <a href="logout.php"
-                   class="btn btn-orange">
-                    Logout
-                </a>
-
-            </div>
-
-        </div>
-
-    </nav>
-
-
-    <!-- PROFILE -->
+    <!-- HALAMAN PROFIL -->
     <main class="profile-page">
 
         <div class="profile-container">
 
-            <!-- HEADER -->
+            <!-- HEADER PROFIL -->
             <div class="profile-header">
 
-                <div class="profile-icon">
-                    <i class="fa-solid fa-user"></i>
-                </div>
+                <h1>Profil Saya</h1>
 
-                <div>
-                    <h1>Profil Saya</h1>
-
-                    <p>
-                        Informasi akun LostFound.sch kamu
-                    </p>
-                </div>
+                <p>Informasi akun LostFound.sch kamu</p>
 
             </div>
 
 
-            <!-- PROFILE CARD -->
+            <!-- CARD PROFIL -->
             <div class="profile-card">
 
+                <!-- HEADER CARD -->
                 <div class="profile-card-header">
 
                     <div>
-                        <h2>
-                            Informasi Pengguna
-                        </h2>
+                        <h2>Informasi Pengguna</h2>
 
                         <p>
                             Data akun yang terdaftar pada sistem.
@@ -154,14 +99,13 @@ if (!$user) {
 
                     <span class="profile-status">
                         <i class="fa-solid fa-circle"></i>
-
                         <?= htmlspecialchars($user["status"]); ?>
                     </span>
 
                 </div>
 
 
-                <!-- USER INFORMATION -->
+                <!-- INFORMASI USER -->
                 <div class="profile-info">
 
                     <!-- Username -->
@@ -284,7 +228,7 @@ if (!$user) {
                     </div>
 
 
-                    <!-- Last Login -->
+                    <!-- Login Terakhir -->
                     <div class="profile-info-item">
 
                         <div class="profile-info-icon">
@@ -312,14 +256,13 @@ if (!$user) {
                 </div>
 
 
-                <!-- ACTION BUTTON -->
+                <!-- TOMBOL -->
                 <div class="profile-actions">
 
                     <a href="update_profil.php"
                        class="profile-edit-button">
 
                         <i class="fa-solid fa-pen"></i>
-
                         Edit Profil
 
                     </a>
@@ -328,8 +271,15 @@ if (!$user) {
                        class="profile-back-button">
 
                         <i class="fa-solid fa-house"></i>
-
                         Kembali ke Beranda
+
+                    </a>
+
+                    <a href="logout.php"
+                       class="profile-logout-button">
+
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        Logout
 
                     </a>
 
@@ -341,24 +291,6 @@ if (!$user) {
 
     </main>
 
-
-    <!-- FOOTER -->
-    <footer>
-
-        <div class="footer-container">
-
-            <div class="footer-logo">
-                LostFound<span>.sch</span>
-            </div>
-
-            <p>
-                Sistem Lost & Found Barang Sekolah
-            </p>
-
-            <p class="footer-copyright">
-                &copy; <?= date("Y"); ?> LostFound.sch
-            </p>
-
         </div>
 
     </footer>
@@ -366,4 +298,3 @@ if (!$user) {
 </body>
 
 </html>
-

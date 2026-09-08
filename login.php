@@ -103,8 +103,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     <title>Login - LostFound.sch</title>
 
-    <link rel="stylesheet"
-          href="css/style.css">
+   <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/login.css">
+
+<!-- Font Awesome -->
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
 </head>
 
@@ -207,11 +211,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
            class="back-home">
 
             <i class="fa-solid fa-arrow-left"></i>
-
             Kembali ke halaman utama 
- <p>Belum punya akun?<a href="register.php">Daftar di sini</a></p>
-        </a>
-
+          <div class="login-register">
+    <span>Belum punya akun?</span>
+    <a href="register.php">Daftar di sini</a>
+</div>
     </div>
 
 </div>
