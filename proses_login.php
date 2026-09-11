@@ -7,7 +7,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username']);
     $password = $_POST['password'];
 
-    $stmt = $koneksi->prepare("
+    $stmt = $conn->prepare("
         SELECT login.id, login.user_id, login.username, login.password, login.status, users.nama, users.role
         FROM login
         JOIN users ON login.user_id = users.id
@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['nama'] = $data['nama'];
             $_SESSION['role'] = $data['role'];
 
-            $update = $koneksi->prepare("UPDATE login SET last_login = NOW() WHERE id = ?");
+            $update = $conn->prepare("UPDATE login SET last_login = NOW() WHERE id = ?");
             $update->bind_param("i", $data['id']);
             $update->execute();
 
