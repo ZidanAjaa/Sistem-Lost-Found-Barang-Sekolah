@@ -386,7 +386,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <div class="nav-buttons">
 
             <a
-                href="profil.php"
+                href="profil_user.php"
                 class="btn btn-outline"
             >
                 Profil

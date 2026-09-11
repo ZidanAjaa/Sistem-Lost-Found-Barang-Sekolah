@@ -1,0 +1,140 @@
+/* LOGIN */
+.login-page {
+    min-height: 100vh;
+    background: #f8f9ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 15px;
+}
+
+.login-container {
+    width: 100%;
+    max-width: 450px;
+}
+
+.login-card {
+    background: #fff;
+    border: 1px solid #e3e0ed;
+    border-radius: 15px;
+    padding: 40px;
+    box-shadow: 0 8px 25px rgba(35, 23, 95, 0.12);
+}
+
+.login-logo {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.login-logo a {
+    color: #21156e;
+    font-size: 28px;
+    font-weight: 900;
+}
+
+.login-logo span {
+    color: #ff6b1a;
+}
+
+.login-card h1 {
+    color: #251273;
+    text-align: center;
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+
+.login-card > p {
+    color: #736b9d;
+    text-align: center;
+    font-size: 14px;
+    margin-bottom: 25px;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.login-form label {
+    color: #2f1b80;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.login-form input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #d8d5e7;
+    border-radius: 10px;
+    outline: none;
+    font-size: 14px;
+}
+
+.login-form input:focus {
+    border-color: #3b28df;
+}
+
+.login-button {
+    width: 100%;
+    border: none;
+    background: #3b28df;
+    color: #fff;
+    padding: 13px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.login-button:hover {
+    background: #2e20b7;
+}
+
+.login-error {
+    background: #ffeaea;
+    color: #d83232;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+    margin-bottom: 15px;
+}
+
+@media (max-width: 500px) {
+    .login-card {
+        padding: 30px 20px;
+    }
+
+    .login-card h1 {
+        font-size: 24px;
+    }
+}
+.login-register {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.login-register span,
+.login-register a {
+    display: inline;
+    vertical-align: baseline;
+}
+
+.login-register span {
+    color: #3b28df;
+    font-weight: 500;
+}
+
+.login-register a {
+    margin-left: 5px;
+    color: #3b28df;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.login-register a:hover {
+    color: #ff6b1a;
+}

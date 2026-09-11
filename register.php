@@ -5,83 +5,82 @@ session_start();
 <html lang="id">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - Lost & Found</title>
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/register.css">
 </head>
+
 <body>
-    <h2>Daftar Akun Baru</h2>
 
-    <?php if (isset($_SESSION['error'])): ?>
-        <p style="color:red;"><?= $_SESSION['error']; unset($_SESSION['error']); ?></p>
-    <?php endif; ?>
+    <div class="register-page">
+        <div class="register-container">
+            <div class="register-card">
 
-    <form action="proses-register.php" method="POST">
-        <label>NISN:</label><br>
-        <input type="text" name="nisn" required><br><br>
+                <h1>Daftar Akun Baru</h1>
 
-        <label>Nama Lengkap:</label><br>
-        <input type="text" name="nama" required><br><br>
+                <p class="register-description">
+                    Buat akun LostFound.sch
+                </p>
 
-        <label>Kelas:</label><br>
-        <input type="text" name="kelas" required><br><br>
+                <?php if (isset($_SESSION['error'])): ?>
+                    <p style="color:red;">
+                        <?= $_SESSION['error']; unset($_SESSION['error']); ?>
+                    </p>
+                <?php endif; ?>
 
-        <label>No. Telepon:</label><br>
-        <input type="text" name="no_telepon" required><br><br>
+                <form action="proses-register.php" method="POST" class="register-form">
 
-        <label>Username:</label><br>
-        <input type="text" name="username" required><br><br>
+                    <div class="register-group">
+                        <label for="nisn">NISN</label>
+                        <input type="text" id="nisn" name="nisn" required>
+                    </div>
 
-        <label>Password:</label><br>
-        <input type="password" name="password" required><br><br>
+                    <div class="register-group">
+                        <label for="nama">Nama Lengkap</label>
+                        <input type="text" id="nama" name="nama" required>
+                    </div>
 
-        <label>Konfirmasi Password:</label><br>
-        <input type="password" name="konfirmasi_password" required><br><br>
+                    <div class="register-group">
+                        <label for="kelas">Kelas</label>
+                        <input type="text" id="kelas" name="kelas" required>
+                    </div>
 
-        <button type="submit">Daftar</button>
-    </form>
+                    <div class="register-group">
+                        <label for="no_telepon">No. Telepon</label>
+                        <input type="text" id="no_telepon" name="no_telepon" required>
+                    </div>
 
-    <p>Sudah punya akun? <a href="login.php">Login di sini</a></p>
+                    <div class="register-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" name="username" required>
+                    </div>
+
+                    <div class="register-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+
+                    <div class="register-group">
+                        <label for="konfirmasi_password">Konfirmasi Password</label>
+                        <input type="password" id="konfirmasi_password" name="konfirmasi_password" required>
+                    </div>
+
+                    <button type="submit" class="register-button">
+                        Daftar
+                    </button>
+
+                </form>
+
+                <div class="register-login">
+                    <span>Sudah punya akun?</span>
+                    <a href="login.php">Login di sini</a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
