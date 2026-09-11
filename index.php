@@ -17,7 +17,9 @@ $barang = [
         "lokasi" => "Kelas XI B 3",
         "tanggal" => "20 Agustus 2026",
         "pemilik" => "Rizky A - XI DKVA",
+        "no_telepon" => "6285706125460",
         "status" => "Belum Ditemukan"
+      
     ],
     [
         "nama" => "Tumbler Warna Hitam & Putih",
@@ -27,6 +29,7 @@ $barang = [
         "lokasi" => "Kelas A.2.1",
         "tanggal" => "08 Juli 2026",
         "pemilik" => "Zidan - XI RPLA",
+        "no_telepon" => "6285878990556",
         "status" => "Ditemukan"
     ],
     [
@@ -37,6 +40,7 @@ $barang = [
         "lokasi" => "Kelas C 3.2",
         "tanggal" => "21 Mei 2026",
         "pemilik" => "Nesya R - TKJ A",
+        "no_telepon" => "6285706125460",
         "status" => "Ditemukan"
     ],
     [
@@ -47,6 +51,7 @@ $barang = [
         "lokasi" => "Kelas D.2",
         "tanggal" => "13 Mei 2026",
         "pemilik" => "Rizky H - XI RPLB",
+        "no_telepon" => "6285706125460",
         "status" => "Belum Ditemukan"
     ],
     [
@@ -57,6 +62,7 @@ $barang = [
         "lokasi" => "Lab Oracle",
         "tanggal" => "09 Agustus 2026",
         "pemilik" => "Yona - XI DKVA",
+        "no_telepon" => "6285745496296",
         "status" => "Belum Ditemukan"
     ],
     [
@@ -68,6 +74,7 @@ $barang = [
         "lokasi" => "Kelas C.4.2",
         "tanggal" => "24 September 2026",
         "pemilik" => "Putra R - XI KJ",
+        "no_telepon" => "6283842451185",
         "status" => "Ditemukan"
     ]
 ];
@@ -243,79 +250,21 @@ $barang = [
                             <span><?= htmlspecialchars($item["tanggal"]); ?></span>
                         </div>
 
-                        <div class="barang-footer">
-                            <span class="owner">
-                                <?= htmlspecialchars($item["pemilik"]); ?>
-                            </span>
+                       <div class="barang-footer">
+    <span class="owner">
+        <?= htmlspecialchars($item["pemilik"]); ?>
+    </span>
 
-                            <a href="#" class="detail-btn">Lihat Detail</a>
-                        </div>
-                    </div>
-
+    <a
+        href="https://wa.me/<?= htmlspecialchars($item["no_telepon"]); ?>?text=<?= urlencode('Halo, saya melihat barang "' . $item["nama"] . '" di LostFound.sch. Saya ingin menghubungi terkait barang tersebut.'); ?>"
+        target="_blank"
+        class="contact-btn"
+    >
+        Hubungi
+    </a>
+</div>
                 </article>
             <?php endforeach; ?>
-
-        </div>
-    </div>
-</section>
-
-<section class="cara-section" id="cara-kerja">
-    <div class="container">
-
-        <div class="cara-top">
-            <div class="cara-text">
-                <h2>Konsep Cara Kerja</h2>
-
-                <p>
-                    Proses yang sederhana, cepat, dan mudah dipahami untuk membantu
-                    kamu melaporkan barang yang hilang, mencari barang yang ditemukan,
-                    mencocokkan informasi barang dengan pemiliknya, hingga membantu
-                    mengembalikan barang temuan kepada pemiliknya dengan aman dan terpercaya.
-                </p>
-            </div>
-
-            <div class="cara-image">
-                <img src="img/siswa2.png" alt="Siswa mencari barang">
-            </div>
-        </div>
-
-        <div class="steps">
-
-            <div class="step-card">
-                <div class="step-number">1</div>
-                <h3>Laporkan</h3>
-                <p>
-                    Isi formulir laporan barang hilang atau barang yang kamu temukan
-                    dengan detail yang lengkap.
-                </p>
-            </div>
-
-            <div class="step-card">
-                <div class="step-number">2</div>
-                <h3>Cari & Cocokan</h3>
-                <p>
-                    Tim kami akan mencocokkan laporan kehilangan dengan barang temuan
-                    yang masuk.
-                </p>
-            </div>
-
-            <div class="step-card">
-                <div class="step-number">3</div>
-                <h3>Dihubungi</h3>
-                <p>
-                    Jika ada kecocokan, kami akan menghubungi pemilik untuk proses
-                    pengambilan barang.
-                </p>
-            </div>
-
-            <div class="step-card">
-                <div class="step-number">4</div>
-                <h3>Ambil Barang</h3>
-                <p>
-                    Datang ke ruang piket dengan membawa bukti kepemilikan
-                    untuk mengambil barangmu kembali.
-                </p>
-            </div>
 
         </div>
     </div>
