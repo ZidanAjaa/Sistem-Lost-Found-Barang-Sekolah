@@ -17,7 +17,7 @@ $barang = [
         "lokasi" => "Kelas XI B 3",
         "tanggal" => "20 Agustus 2026",
         "pemilik" => "Rizky A - XI DKVA",
-        "no_telepon" => "6285706125460",
+        "no_telepon" => "6282144653678",
         "status" => "Belum Ditemukan"
       
     ],
@@ -196,6 +196,7 @@ $barang = [
 <section class="barang-section" id="daftar-barang">
     <div class="container">
 
+        <!-- Header -->
         <div class="section-header">
             <div>
                 <h2>Daftar Barang</h2>
@@ -209,118 +210,103 @@ $barang = [
             </div>
         </div>
 
+        <!-- Filter Kategori -->
         <div class="category-list">
             <button class="category-btn active" type="button">Semua</button>
             <button class="category-btn" type="button">Tas & Dompet</button>
             <button class="category-btn" type="button">Elektronik</button>
-            <button class="category-btn" type="button">Alat Tulis</button>
-            <button class="category-btn" type="button">Pakaian</button>
-            <button class="category-btn" type="button">Dokumen</button>
+            <button class="category-btn" type="button">Peralatan</button>
+            <button class="category-btn" type="button">Aksesoris</button>
         </div>
 
+        <!-- Daftar Barang -->
         <div class="barang-grid">
 
             <?php foreach ($barang as $item): ?>
+
                 <article class="barang-card">
 
+                    <!-- Gambar Barang -->
                     <div class="barang-image">
+
                         <img
                             src="<?= htmlspecialchars($item["gambar"]); ?>"
                             alt="<?= htmlspecialchars($item["nama"]); ?>"
                         >
 
-                        <span class="status-badge <?= $item["status"] === "Ditemukan" ? "status-found" : "status-lost"; ?>">
+                        <span class="status-badge <?= 
+                            $item["status"] === "Ditemukan"
+                            ? "status-found"
+                            : "status-lost";
+                        ?>">
                             <?= htmlspecialchars($item["status"]); ?>
                         </span>
+
                     </div>
 
-
-
-                </div>
-
-            </article>
-
-            <!-- =================================================
-                 TUMBLER
-            ================================================== -->
-
-            <article class="barang-card">
-
-                <div class="barang-image">
-
-                    <img
-                        src="img/tumbler.jpg"
-                        alt="Tumbler Warna Hitam dan Putih"
-                    >
-
-
-                    <span class="status-badge status-found">
-                        Ditemukan
-                    </span>
-
-                </div>
-
-
-                <div class="barang-content">
-
-                    <span class="category-label">
-                        Peralatan
-                    </span>
-
-
-                    <h3>
-                        Tumbler Warna Hitam & Putih
-                    </h3>
-
-
-                    <p class="barang-description">
-
-                        Tumbler berwarna hitam dan putih
-                        berukuran 1000 ml.
-
-                    </p>
-
-
-                    <div class="barang-info">
-
-                        <span>
-                             Kelas A.2.1
-=======
+                    <!-- Isi Card -->
                     <div class="barang-content">
+
                         <span class="category-label">
                             <?= htmlspecialchars($item["kategori"]); ?>
-
                         </span>
 
-                        <h3><?= htmlspecialchars($item["nama"]); ?></h3>
+                        <h3>
+                            <?= htmlspecialchars($item["nama"]); ?>
+                        </h3>
 
                         <p class="barang-description">
                             <?= htmlspecialchars($item["deskripsi"]); ?>
                         </p>
 
+                        <!-- Informasi Barang -->
                         <div class="barang-info">
-                            <span><?= htmlspecialchars($item["lokasi"]); ?></span>
-                            <span><?= htmlspecialchars($item["tanggal"]); ?></span>
+
+                            <span>
+                                <i class="fa-solid fa-location-dot"></i>
+                                <?= htmlspecialchars($item["lokasi"]); ?>
+                            </span>
+
+                            <span>
+                                <i class="fa-regular fa-calendar"></i>
+                                <?= htmlspecialchars($item["tanggal"]); ?>
+                            </span>
+
                         </div>
 
-                       <div class="barang-footer">
-    <span class="owner">
-        <?= htmlspecialchars($item["pemilik"]); ?>
-    </span>
+                        <!-- Footer Card -->
+                        <div class="barang-footer">
 
-    <a
-        href="https://wa.me/<?= htmlspecialchars($item["no_telepon"]); ?>?text=<?= urlencode('Halo, saya melihat barang "' . $item["nama"] . '" di LostFound.sch. Saya ingin menghubungi terkait barang tersebut.'); ?>"
-        target="_blank"
-        class="contact-btn"
-    >
-        Hubungi
-    </a>
-</div>
+                            <span class="owner">
+                                <?= htmlspecialchars($item["pemilik"]); ?>
+                            </span>
+
+                            <a
+                                href="https://wa.me/<?= htmlspecialchars($item["no_telepon"]); ?>?text=<?= urlencode(
+                                    'Halo, saya melihat barang "' .
+                                    $item["nama"] .
+                                    '" di LostFound.sch. Saya ingin menghubungi terkait barang tersebut.'
+                                ); ?>"
+                                target="_blank"
+                                class="contact-btn"
+                            >
+                                <i class="fa-brands fa-whatsapp"></i>
+                               
+                             Hubungi
+                            </a>
+
+                        </div>
+
+                    </div>
+
                 </article>
+
             <?php endforeach; ?>
 
         </div>
+
     </div>
+
 </section>
 
 <section class="cta-section">
