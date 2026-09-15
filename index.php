@@ -121,8 +121,8 @@ $barang = [
         </nav>
 
         <div class="nav-buttons">
-            <a href="#" class="btn btn-outline">Lapor Hilang</a>
-            <a href="#" class="btn btn-orange">Lapor Temuan</a>
+            <a href="<?= $isLoggedIn ? 'barang_crud.php?jenis=Hilang' : 'login.php' ?>" class="btn btn-outline">Lapor Hilang</a>
+            <a href="<?= $isLoggedIn ? 'barang_crud.php?jenis=Temuan' : 'login.php' ?>" class="btn btn-orange">Lapor Temuan</a>
         </div>
 
     </div>
@@ -325,8 +325,8 @@ $barang = [
             </p>
 
             <div class="cta-buttons">
-                <a href="#" class="btn btn-orange">Laporkan Barang Temuan</a>
-                <a href="#" class="btn btn-white">Laporkan Barang Hilang</a>
+                <a href="<?= $isLoggedIn ? 'barang_crud.php?jenis=Temuan' : 'login.php' ?>" class="btn btn-orange">Laporkan Barang Temuan</a>
+                <a href="<?= $isLoggedIn ? 'barang_crud.php?jenis=Hilang' : 'login.php' ?>" class="btn btn-white">Laporkan Barang Hilang</a>
             </div>
         </div>
 

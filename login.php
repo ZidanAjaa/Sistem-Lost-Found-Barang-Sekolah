@@ -71,7 +71,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 );
                 mysqli_stmt_execute($stmtUpdate);
 
-                header("Location: profil_user.php");
+                header("Location: dashboard.php");
                 exit;
 
             } else {
