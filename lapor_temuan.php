@@ -31,6 +31,20 @@ textarea{min-height:120px;resize:vertical}
 </style>
 </head>
 <body>
+<header class="top-nav">
+    <div class="nav-inner">
+        <a href="index.php" class="logo" style="display:flex; align-items:center; gap:10px; font-weight:800; color:#21156e;">
+            <span class="logo-text">LostFound<span>.sch</span></span>
+        </a>
+        <nav class="nav-menu">
+            <a href="index.php">Beranda</a>
+            <a href="dashboard.php">Dashboard</a>
+            <a href="profil_user.php">Profil</a>
+            <a href="barang_crud.php">Kelola Barang</a>
+            <a href="logout.php">Logout</a>
+        </nav>
+    </div>
+</header>
 <div class="form-page">
 <div class="form-card">
 <h1><i class="fa-solid fa-triangle-exclamation"></i> Lapor Barang Temuan</h1>

@@ -17,6 +17,44 @@ body {
     line-height: 1.6;
 }
 
+.top-nav {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(29, 40, 87, 0.08);
+    box-shadow: 0 3px 12px rgba(18, 26, 59, 0.08);
+}
+
+.top-nav .nav-inner {
+    max-width: 1200px;
+    width: 92%;
+    margin: 0 auto;
+    min-height: 74px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.top-nav .nav-menu {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.top-nav .nav-menu a {
+    color: #2f1b80;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.top-nav .nav-menu a:hover {
+    color: #ff6b1a;
+}
+
 img {
     max-width: 100%;
     display: block;
@@ -182,12 +220,15 @@ input {
     padding: 65px 0 55px;
 
     background:
-        radial-gradient(
-            circle at 20% 20%,
-            rgba(75, 55, 230, 0.07),
-            transparent 30%
+        linear-gradient(
+            90deg,
+            rgba(245, 248, 255, 0.96) 0%,
+            rgba(245, 248, 255, 0.85) 24%,
+            rgba(245, 248, 255, 0.45) 48%,
+            rgba(245, 248, 255, 0.12) 70%,
+            rgba(245, 248, 255, 0.05) 100%
         ),
-        #ffffff;
+        url("../img/foto pendukung ta.jpeg") center/cover no-repeat;
 }
 
 .hero-inner {
@@ -200,6 +241,8 @@ input {
 
 .hero-content {
     flex: 1;
+    position: relative;
+    z-index: 1;
 }
 
 
