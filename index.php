@@ -157,7 +157,7 @@ $barang = [
         </div>
 
         <div class="hero-image">
-            <img src="img/siswa1.png" alt="Siswa mencari barang hilang">
+  
         </div>
 
     </div>
