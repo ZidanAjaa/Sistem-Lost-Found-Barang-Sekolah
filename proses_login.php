@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['nama'] = $data['nama'];
             $_SESSION['role'] = $data['role'];
 
-            $update = $conn->prepare("UPDATE login SET last_login = NOW() WHERE id = ?");
+            $update = $koneksi->prepare("UPDATE login SET last_login = NOW() WHERE id = ?");
             $update->bind_param("i", $data['id']);
             $update->execute();
 

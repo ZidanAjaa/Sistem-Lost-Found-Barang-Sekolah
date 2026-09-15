@@ -1,83 +1,94 @@
 <?php
 session_start();
+require_once __DIR__ . "/koneksi.php";
 
 $isLoggedIn = isset($_SESSION["login"]) && $_SESSION["login"] === true;
 
-$totalDilaporkan = 312;
-$totalDitemukan = 200;
-$tingkatKeberhasilan = 99;
-$rataProses = "2.4 Hari";
+$stats = mysqli_fetch_assoc(mysqli_query($koneksi, "
+    SELECT
+        COUNT(*) AS total_barang,
+        SUM(CASE WHEN status_barang = 'Hilang' THEN 1 ELSE 0 END) AS total_hilang,
+        SUM(CASE WHEN status_barang = 'Ditemukan' THEN 1 ELSE 0 END) AS total_ditemukan
+    FROM barang
+"));
 
-$barang = [
-    [
-        "nama" => "Tas Ransel Hitam",
-        "gambar" => "img/tas.jpg",
-        "kategori" => "Tas",
-        "deskripsi" => "Tas ransel warna hitam dengan gantungan kunci hello kitty.",
-        "lokasi" => "Kelas XI B 3",
-        "tanggal" => "20 Agustus 2026",
-        "pemilik" => "Rizky A - XI DKVA",
-        "no_telepon" => "6282144653678",
-        "status" => "Belum Ditemukan"
-      
-    ],
-    [
-        "nama" => "Tumbler Warna Hitam & Putih",
-        "gambar" => "img/tumbler.jpg",
-        "kategori" => "Peralatan",
-        "deskripsi" => "Tumbler berwarna hitam dan putih berukuran 1000 ml.",
-        "lokasi" => "Kelas A.2.1",
-        "tanggal" => "08 Juli 2026",
-        "pemilik" => "Zidan - XI RPLA",
-        "no_telepon" => "6285878990556",
-        "status" => "Ditemukan"
-    ],
-    [
-        "nama" => "AirPods Pro Putih",
-        "gambar" => "img/airpods.jpg",
-        "kategori" => "Elektronik",
-        "deskripsi" => "Earphone Apple warna putih yang hilang saat olahraga.",
-        "lokasi" => "Kelas C 3.2",
-        "tanggal" => "21 Mei 2026",
-        "pemilik" => "Nesya R - TKJ A",
-        "no_telepon" => "6285706125460",
-        "status" => "Ditemukan"
-    ],
-    [
-        "nama" => "Dompet Warna Hitam",
-        "gambar" => "img/dompet.jpg",
-        "kategori" => "Dompet",
-        "deskripsi" => "Dompet berwarna hitam yang memiliki gantungan kecil berbentuk love.",
-        "lokasi" => "Kelas D.2",
-        "tanggal" => "13 Mei 2026",
-        "pemilik" => "Rizky H - XI RPLB",
-        "no_telepon" => "6285706125460",
-        "status" => "Belum Ditemukan"
-    ],
-    [
-        "nama" => "Bekal Makanan",
-        "gambar" => "img/bekal.jpg",
-        "kategori" => "Peralatan",
-        "deskripsi" => "Bekal makanan berwarna cokelat yang hilang saat istirahat.",
-        "lokasi" => "Lab Oracle",
-        "tanggal" => "09 Agustus 2026",
-        "pemilik" => "Yona - XI DKVA",
-        "no_telepon" => "6285745496296",
-        "status" => "Belum Ditemukan"
-    ],
-    [
-        "nama" => "Kunci Motor",
-        "gambar" => "img/kunci.jpg",
-        "alt" => "Kunci Motor",
-        "kategori" => "Aksesoris",
-        "deskripsi" => "Kunci motor dengan gantungan kunci sederhana yang hilang.",
-        "lokasi" => "Kelas C.4.2",
-        "tanggal" => "24 September 2026",
-        "pemilik" => "Putra R - XI KJ",
-        "no_telepon" => "6283842451185",
-        "status" => "Ditemukan"
-    ]
-];
+$totalDilaporkan = (int) ($stats["total_barang"] ?? 0);
+$totalDitemukan = (int) ($stats["total_ditemukan"] ?? 0);
+$tingkatKeberhasilan = $totalDilaporkan > 0 ? round(($totalDitemukan / $totalDilaporkan) * 100) : 0;
+
+$search = trim($_GET["search"] ?? "");
+$category = trim($_GET["category"] ?? "");
+
+$categories = mysqli_query($koneksi, "SELECT nama_kategori FROM kategori ORDER BY nama_kategori ASC");
+
+$sqlBarang = "
+    SELECT
+        b.id,
+        b.nama_barang,
+        b.foto,
+        b.deskripsi,
+        b.lokasi_kejadian,
+        b.tanggal_kejadian,
+        b.status_barang,
+        k.nama_kategori,
+        u.nama AS pemilik,
+        u.kelas,
+        u.no_telepon
+    FROM barang b
+    LEFT JOIN kategori k ON k.id = b.kategori_id
+    LEFT JOIN users u ON u.id = b.pemilik_id
+    WHERE 1=1
+";
+
+if ($search !== "") {
+    $sqlBarang .= " AND (
+        b.nama_barang LIKE ? OR
+        b.deskripsi LIKE ? OR
+        b.lokasi_kejadian LIKE ?
+    )";
+}
+
+if ($category !== "" && strtolower($category) !== "semua") {
+    $sqlBarang .= " AND k.nama_kategori = ?";
+}
+
+$sqlBarang .= " ORDER BY b.created_at DESC";
+
+$stmtBarang = mysqli_prepare($koneksi, $sqlBarang);
+
+if ($search !== "" && $category !== "" && strtolower($category) !== "semua") {
+    $like = "%" . $search . "%";
+    mysqli_stmt_bind_param($stmtBarang, "ssss", $like, $like, $like, $category);
+} elseif ($search !== "") {
+    $like = "%" . $search . "%";
+    mysqli_stmt_bind_param($stmtBarang, "sss", $like, $like, $like);
+} elseif ($category !== "" && strtolower($category) !== "semua") {
+    mysqli_stmt_bind_param($stmtBarang, "s", $category);
+}
+
+mysqli_stmt_execute($stmtBarang);
+$resultBarang = mysqli_stmt_get_result($stmtBarang);
+
+$barang = [];
+while ($row = mysqli_fetch_assoc($resultBarang)) {
+    $foto = !empty($row["foto"]) && file_exists(__DIR__ . "/" . $row["foto"])
+        ? $row["foto"]
+        : "https://placehold.co/600x400/f3f4f6/374151?text=Foto+Barang";
+
+    $barang[] = [
+        "id" => (int) $row["id"],
+        "nama" => $row["nama_barang"],
+        "gambar" => $foto,
+        "kategori" => $row["nama_kategori"] ?: "Umum",
+        "deskripsi" => $row["deskripsi"],
+        "lokasi" => $row["lokasi_kejadian"],
+        "tanggal" => date("d F Y", strtotime($row["tanggal_kejadian"])),
+        "pemilik" => trim(($row["pemilik"] ?? "") . (!empty($row["kelas"]) ? " - " . $row["kelas"] : "")),
+        "no_telepon" => $row["no_telepon"] ?? "",
+        "status" => $row["status_barang"] === "Hilang" ? "Belum Ditemukan" : "Ditemukan",
+        "status_raw" => $row["status_barang"] ?? "Hilang",
+    ];
+}
 ?>
 
 <!DOCTYPE html>
@@ -145,13 +156,17 @@ $barang = [
                 kembali barang mereka.
             </p>
 
-            <form class="search-box" action="#" method="GET">
+            <form class="search-box" action="index.php" method="GET">
                 <span class="search-icon"></span>
                 <input
                     type="text"
                     name="search"
+                    value="<?= htmlspecialchars($search) ?>"
                     placeholder="Cari nama barang, lokasi..."
                 >
+                <?php if ($category !== ""): ?>
+                    <input type="hidden" name="category" value="<?= htmlspecialchars($category) ?>">
+                <?php endif; ?>
                 <button type="submit">Cari</button>
             </form>
         </div>
@@ -212,11 +227,11 @@ $barang = [
 
         <!-- Filter Kategori -->
         <div class="category-list">
-            <button class="category-btn active" type="button">Semua</button>
-            <button class="category-btn" type="button">Tas & Dompet</button>
-            <button class="category-btn" type="button">Elektronik</button>
-            <button class="category-btn" type="button">Peralatan</button>
-            <button class="category-btn" type="button">Aksesoris</button>
+            <a href="index.php<?= $search !== "" ? '?search=' . urlencode($search) : '' ?>" class="category-btn <?= ($category === "" || strtolower($category) === "semua") ? 'active' : '' ?>">Semua</a>
+            <?php while ($rowCat = mysqli_fetch_assoc($categories)): ?>
+                <?php $namaKategori = $rowCat['nama_kategori']; ?>
+                <a href="index.php?category=<?= urlencode($namaKategori) ?><?= $search !== "" ? '&search=' . urlencode($search) : '' ?>" class="category-btn <?= strtolower($category) === strtolower($namaKategori) ? 'active' : '' ?>"><?= htmlspecialchars($namaKategori) ?></a>
+            <?php endwhile; ?>
         </div>
 
         <!-- Daftar Barang -->
@@ -232,10 +247,11 @@ $barang = [
                         <img
                             src="<?= htmlspecialchars($item["gambar"]); ?>"
                             alt="<?= htmlspecialchars($item["nama"]); ?>"
+                            style="width:100%;height:220px;object-fit:cover;"
                         >
 
                         <span class="status-badge <?= 
-                            $item["status"] === "Ditemukan"
+                            $item["status_raw"] === "Ditemukan"
                             ? "status-found"
                             : "status-lost";
                         ?>">
@@ -278,22 +294,34 @@ $barang = [
                         <div class="barang-footer">
 
                             <span class="owner">
-                                <?= htmlspecialchars($item["pemilik"]); ?>
+                                <?= htmlspecialchars($item["pemilik"] ?: "Pelapor"); ?>
                             </span>
 
-                            <a
-                                href="https://wa.me/<?= htmlspecialchars($item["no_telepon"]); ?>?text=<?= urlencode(
-                                    'Halo, saya melihat barang "' .
-                                    $item["nama"] .
-                                    '" di LostFound.sch. Saya ingin menghubungi terkait barang tersebut.'
-                                ); ?>"
-                                target="_blank"
-                                class="contact-btn"
-                            >
-                                <i class="fa-brands fa-whatsapp"></i>
-                               
-                             Hubungi
-                            </a>
+                            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
+                                <a href="detail_barang.php?id=<?= (int) $item['id'] ?>" class="contact-btn" style="background:#eef2ff; color:#2c2f5d;">
+                                    Detail
+                                </a>
+
+                                <?php if (!empty($item["no_telepon"])): ?>
+                                    <a
+                                        href="https://wa.me/<?= htmlspecialchars(preg_replace('/\D+/', '', $item["no_telepon"])) ?>?text=<?= urlencode(
+                                            'Halo, saya melihat barang "' .
+                                            $item["nama"] .
+                                            '" di LostFound.sch. Saya ingin menghubungi terkait barang tersebut.'
+                                        ); ?>"
+                                        target="_blank"
+                                        class="contact-btn"
+                                    >
+                                        <i class="fa-brands fa-whatsapp"></i>
+                                        Hubungi
+                                    </a>
+                                <?php else: ?>
+                                    <span class="contact-btn" style="opacity:0.7; pointer-events:none;">
+                                        <i class="fa-brands fa-whatsapp"></i>
+                                        Tidak Tersedia
+                                    </span>
+                                <?php endif; ?>
+                            </div>
 
                         </div>
 
