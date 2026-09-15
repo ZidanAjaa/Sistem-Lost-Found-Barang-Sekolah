@@ -27,6 +27,27 @@ if (!$user) {
     echo "Data pengguna tidak ditemukan.";
     exit;
 }
+
+/* Hapus akun */
+if (isset($_POST["hapus_akun"])) {
+
+    mysqli_begin_transaction($koneksi);
+
+    try {
+        mysqli_query($koneksi, "DELETE FROM login WHERE user_id = $id");
+        mysqli_query($koneksi, "DELETE FROM users WHERE id = $id");
+
+        mysqli_commit($koneksi);
+
+        session_destroy();
+        header("Location: login.php");
+        exit;
+
+    } catch (Exception $e) {
+        mysqli_rollback($koneksi);
+        echo "Akun gagal dihapus.";
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -58,47 +79,57 @@ if (!$user) {
 
             <div class="info-box">
                 <label>Username</label>
-                <strong><?= htmlspecialchars($user['username']) ?></strong>
+                <strong><?= htmlspecialchars($user["username"]) ?></strong>
             </div>
 
             <div class="info-box">
                 <label>NISN</label>
-                <strong><?= htmlspecialchars($user['nisn']) ?></strong>
+                <strong><?= htmlspecialchars($user["nisn"]) ?></strong>
             </div>
 
             <div class="info-box">
                 <label>Nama Lengkap</label>
-                <strong><?= htmlspecialchars($user['nama']) ?></strong>
+                <strong><?= htmlspecialchars($user["nama"]) ?></strong>
             </div>
 
             <div class="info-box">
                 <label>Kelas</label>
-                <strong><?= htmlspecialchars($user['kelas']) ?></strong>
+                <strong><?= htmlspecialchars($user["kelas"]) ?></strong>
             </div>
 
             <div class="info-box">
                 <label>No. Telepon</label>
-                <strong><?= htmlspecialchars($user['no_telepon']) ?></strong>
+                <strong><?= htmlspecialchars($user["no_telepon"]) ?></strong>
             </div>
 
         </div>
 
         <div class="profile-actions">
-            <a href="update_profil.php" class="btn-profile">
+
+            <a href="update_profil.php" class="btn-edit">
                 Edit Profil
             </a>
 
-            <a href="index.php" class="btn-profile">
+            <a href="index.php" class="btn-kembali">
                 Kembali ke Beranda
             </a>
 
-            <a href="delete_user.php" class="btn-profile">
-                Hapus Akun
-            </a>
+            <form method="POST"
+                  onsubmit="return confirm('Yakin ingin menghapus akun ini?');"
+                  style="display:inline;">
 
-            <a href="logout.php" class="btn-profile">
+                <button type="submit"
+                        name="hapus_akun"
+                        class="btn-hapus">
+                    Hapus Akun
+                </button>
+
+            </form>
+
+            <a href="logout.php" class="btn-logout">
                 Logout
             </a>
+
         </div>
 
     </div>

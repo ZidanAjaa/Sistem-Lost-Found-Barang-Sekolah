@@ -90,18 +90,50 @@
     border-top: 1px solid #ddd;
 }
 
-.btn-profile {
+.btn-edit {
     padding: 10px 16px;
-    border: 1px solid #bbb;
+    border: 1px solid #bbbbbb;
     border-radius: 5px;
-    background: #fff;
-    color: #222;
+    background: #ffc400;
+    color: #fff;
     font-size: 14px;
     font-weight: 600;
     text-decoration: none;
     cursor: pointer;
 }
-
+.btn-kembali{
+    padding: 10px 16px;
+    border: 1px solid #bbbbbb;
+    border-radius: 5px;
+    background: #0371f6;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+.btn-hapus{
+    padding: 10px 16px;
+    border: 1px solid #bbbbbb;
+    border-radius: 5px;
+    background: #f70707;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+.btn-logout{
+    padding: 10px 16px;
+    border: 1px solid #bbbbbb;
+    border-radius: 5px;
+    background: #000000;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
 .btn-profile:hover {
     background: #f0f0f0;
 }
@@ -179,4 +211,5 @@
     .profile-actions {
         justify-content: flex-start;
     }
+    
 }
