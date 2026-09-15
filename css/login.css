@@ -2,15 +2,14 @@
 .login-page {
     min-height: 100vh;
     background: #f8f9ff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: block;
     padding: 30px 15px;
 }
 
 .login-container {
     width: 100%;
     max-width: 450px;
+    margin: 30px auto 0;
 }
 
 .login-card {

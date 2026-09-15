@@ -121,7 +121,6 @@ while ($row = mysqli_fetch_assoc($resultBarang)) {
 
         <nav class="nav-menu">
             <a href="#daftar-barang">Daftar Barang</a>
-            <a href="#cara-kerja">Cara Kerja</a>
             <a href="#kontak">Kontak</a>
 
             <?php if ($isLoggedIn): ?>

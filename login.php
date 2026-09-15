@@ -114,20 +114,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <body class="login-page">
 
-<header class="top-nav">
-    <div class="nav-inner">
-        <a href="index.php" class="logo" style="display:flex; align-items:center; gap:10px; font-weight:800; color:#21156e;">
-            <span class="logo-text">LostFound<span>.sch</span></span>
-        </a>
-        <nav class="nav-menu">
-            <a href="index.php">Beranda</a>
-            <a href="login.php">Login</a>
-            <a href="register.php">Daftar</a>
-            <a href="dashboard.php">Dashboard</a>
-        </nav>
-    </div>
-</header>
-
 <div class="login-container">
 
     <div class="login-card">
