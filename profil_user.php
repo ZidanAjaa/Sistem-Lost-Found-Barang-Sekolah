@@ -69,8 +69,6 @@ if (isset($_POST["hapus_akun"])) {
                 <h1>Informasi Pengguna</h1>
                 <p>Data akun yang terdaftar pada sistem.</p>
             </div>
-
-            <div class="status-active">Aktif</div>
         </div>
 
         <div class="profile-divider"></div>

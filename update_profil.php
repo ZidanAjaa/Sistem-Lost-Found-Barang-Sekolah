@@ -2,36 +2,45 @@
 session_start();
 require_once "koneksi.php";
 
-if (!isset($_SESSION['user_id'])) {
+if (!isset($_SESSION["user_id"])) {
     header("Location: login.php");
     exit;
 }
 
-$id = $_SESSION['user_id'];
+$id = $_SESSION["user_id"];
 
-$query = mysqli_query($koneksi, "SELECT * FROM users WHERE id = '$id'");
-$user = mysqli_fetch_assoc($query);
+$query = "SELECT users.nisn, users.nama, users.kelas, users.no_telepon,
+                 login.username
+          FROM users
+          JOIN login ON users.id = login.user_id
+          WHERE users.id = $id";
 
-if (isset($_POST['update'])) {
+$result = mysqli_query($koneksi, $query);
+$user = mysqli_fetch_assoc($result);
 
-    $username = $_POST['username'];
-    $nisn = $_POST['NISN'];
-    $nama = $_POST['Nama'];
-    $kelas = $_POST['Kelas'];
-    $telepon = $_POST['No_Telepon'];
+if (isset($_POST["simpan"])) {
 
-    $query = "UPDATE users SET
-              username = '$username',
-              NISN = '$nisn',
-              Nama = '$nama',
-              Kelas = '$kelas',
-              No_Telepon = '$telepon'
-              WHERE id = '$id'";
+    $username = $_POST["username"];
+    $nisn = $_POST["nisn"];
+    $nama = $_POST["nama"];
+    $kelas = $_POST["kelas"];
+    $no_telepon = $_POST["no_telepon"];
 
-    if (mysqli_query($koneksi, $query)) {
-        header("Location: profil_user.php");
-        exit;
-    }
+    mysqli_query($koneksi, "UPDATE users SET
+        nisn = '$nisn',
+        nama = '$nama',
+        kelas = '$kelas',
+        no_telepon = '$no_telepon'
+        WHERE id = $id
+    ");
+
+    mysqli_query($koneksi, "UPDATE login SET
+        username = '$username'
+        WHERE user_id = $id
+    ");
+
+    header("Location: profil_user.php");
+    exit;
 }
 ?>
 
@@ -40,69 +49,89 @@ if (isset($_POST['update'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Profil</title>
+
+    <title>Edit Profil - LostFound.sch</title>
+
     <link rel="stylesheet" href="css/profil.css">
+
 </head>
 
-<body class="profile-page">
+<body>
 
-<div class="profile-container">
-    <div class="profile-card">
+<div class="profile-page">
 
-        <div class="profile-top">
-            <div>
-                <h1>Edit Profil</h1>
-                <p>Ubah informasi akun pengguna.</p>
-            </div>
+    <div class="profile-container">
+
+        <div class="profile-card">
+
+            <h1>Edit Profil</h1>
+            <p>Ubah data profil kamu.</p>
+
+            <div class="profile-divider"></div>
+
+            <form method="POST" class="profile-form">
+
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text"
+                           name="username"
+                           value="<?= htmlspecialchars($user['username']) ?>"
+                           required>
+                </div>
+
+                <div class="form-group">
+                    <label>NISN</label>
+                    <input type="text"
+                           name="nisn"
+                           value="<?= htmlspecialchars($user['nisn']) ?>"
+                           required>
+                </div>
+
+                <div class="form-group">
+                    <label>Nama Lengkap</label>
+                    <input type="text"
+                           name="nama"
+                           value="<?= htmlspecialchars($user['nama']) ?>"
+                           required>
+                </div>
+
+                <div class="form-group">
+                    <label>Kelas</label>
+                    <input type="text"
+                           name="kelas"
+                           value="<?= htmlspecialchars($user['kelas']) ?>"
+                           required>
+                </div>
+
+                <div class="form-group">
+                    <label>No. Telepon</label>
+                    <input type="text"
+                           name="no_telepon"
+                           value="<?= htmlspecialchars($user['no_telepon']) ?>"
+                           required>
+                </div>
+
+                <div class="profile-actions">
+
+                    <button type="submit"
+                            name="simpan"
+                            class="btn-profilee">
+                        Simpan Perubahan
+                    </button>
+
+                    <a href="profil_user.php"
+                       class="btn-profilei">
+                        Batal
+                    </a>
+
+                </div>
+
+            </form>
+
         </div>
 
-        <div class="profile-divider"></div>
-
-        <form method="POST" class="profile-form">
-
-            <div class="form-group">
-                <label>Username</label>
-                <input type="text" name="username"
-                    value="<?= htmlspecialchars($user['username']) ?>" required>
-            </div>
-
-            <div class="form-group">
-                <label>NISN</label>
-                <input type="text" name="NISN"
-                    value="<?= htmlspecialchars($user['NISN']) ?>" required>
-            </div>
-
-            <div class="form-group">
-                <label>Nama Lengkap</label>
-                <input type="text" name="Nama"
-                    value="<?= htmlspecialchars($user['Nama']) ?>" required>
-            </div>
-
-            <div class="form-group">
-                <label>Kelas</label>
-                <input type="text" name="Kelas"
-                    value="<?= htmlspecialchars($user['Kelas']) ?>" required>
-            </div>
-
-            <div class="form-group">
-                <label>No. Telepon</label>
-                <input type="text" name="No_Telepon"
-                    value="<?= htmlspecialchars($user['No_Telepon']) ?>" required>
-            </div>
-
-            <div class="profile-actions">
-                <button type="submit" name="update" class="btn-profile">
-                    Simpan Perubahan
-                </button>
-
-                <a href="profil_user.php" class="btn-profile">
-                    Batal
-                </a>
-            </div>
-
-        </form>
-
     </div>
+
 </div>
 
 </body>

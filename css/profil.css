@@ -137,8 +137,34 @@
 .btn-profile:hover {
     background: #f0f0f0;
 }
-
-/* FORM */
+.btn-profilee {
+    padding: 10px 16px;
+    border: 1px solid #bbbbbb;
+    border-radius: 5px;
+    background: #11ff00;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+.btn-profilee:hover {
+    background: #0f3b02;
+}
+.btn-profilei {
+    padding: 10px 16px;
+    border: 1px solid #bbbbbb;
+    border-radius: 5px;
+    background: #ff0000;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+.btn-profilei:hover {
+    background: #ff8b07;
+}
 
 .profile-form {
     max-width: 700px;
