@@ -477,7 +477,7 @@ $recent_barang = mysqli_query($koneksi, "
                                 <p class="eyebrow">Management</p>
                                 <h2>Kelola Data Barang</h2>
                             </div>
-                            <a href="barang_crud.php" class="btn btn-primary">Buka CRUD</a>
+                            <a href="laporan_barang_admin.php" class="btn btn-primary">LIHAT DETAIL</a>
                         </div>
 
                         <div class="panel">
