@@ -9,120 +9,182 @@ if (!isset($_SESSION["user_id"])) {
 
 $id = $_SESSION["user_id"];
 
-$query = "SELECT users.nisn, users.nama, users.kelas, users.no_telepon,
-                 login.username
-          FROM users
-          JOIN login ON users.id = login.user_id
-          WHERE users.id = $id";
+$sql = "SELECT users.*, login.username
+        FROM users
+        JOIN login ON users.id = login.user_id
+        WHERE users.id = ?";
 
-$result = mysqli_query($koneksi, $query);
-$user = mysqli_fetch_assoc($result);
+$stmt = mysqli_prepare($koneksi, $sql);
+mysqli_stmt_bind_param($stmt, "i", $id);
+mysqli_stmt_execute($stmt);
 
-if (isset($_POST["simpan"])) {
+$user = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 
-    $username = $_POST["username"];
-    $nisn = $_POST["nisn"];
-    $nama = $_POST["nama"];
-    $kelas = $_POST["kelas"];
-    $no_telepon = $_POST["no_telepon"];
-
-    mysqli_query($koneksi, "UPDATE users SET
-        nisn = '$nisn',
-        nama = '$nama',
-        kelas = '$kelas',
-        no_telepon = '$no_telepon'
-        WHERE id = $id
-    ");
-
-    mysqli_query($koneksi, "UPDATE login SET
-        username = '$username'
-        WHERE user_id = $id
-    ");
-
-    header("Location: profil_user.php");
-    exit;
-}
+$foto = !empty($user["foto_profil"])
+    ? "img/profil/" . $user["foto_profil"]
+    : "img/profil/default.jpg";
 ?>
 
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Edit Profil - LostFound.sch</title>
 
+    <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/profil.css">
-
 </head>
 
 <body>
 
-<div class="profile-page">
+<main class="profile-page">
 
     <div class="profile-container">
 
         <div class="profile-card">
 
-            <h1>Edit Profil</h1>
-            <p>Ubah data profil kamu.</p>
+            <div class="profile-header">
 
-            <div class="profile-divider"></div>
+                <div class="profile-photo">
+                    <img id="preview" src="<?= htmlspecialchars($foto) ?>">
+                </div>
 
-            <form method="POST" class="profile-form">
+                <div>
+                    <h1>Edit Profil</h1>
+                    <p>Perbarui informasi akun kamu.</p>
+                </div>
+
+            </div>
+
+
+            <form
+                method="POST"
+                action="proses_update_profil.php"
+                enctype="multipart/form-data"
+                class="profile-form"
+            >
 
                 <div class="form-group">
+
+                    <label>Foto Profil</label>
+
+                    <input
+                        type="file"
+                        name="foto_profil"
+                        id="foto"
+                        accept=".jpg,.jpeg,.png,.webp"
+                    >
+
+                    <small>
+                        maksimal 2 MB.
+                    </small>
+
+                </div>
+
+
+                <div class="form-group">
+
                     <label>Username</label>
-                    <input type="text"
-                           name="username"
-                           value="<?= htmlspecialchars($user['username']) ?>"
-                           required>
+
+                    <input
+                        type="text"
+                        name="username"
+                        value="<?= htmlspecialchars($user["username"]) ?>"
+                        required
+                    >
+
                 </div>
 
+
                 <div class="form-group">
+
+                    <label>Gmail</label>
+
+                    <input
+                        type="email"
+                        name="email"
+                        value="<?= htmlspecialchars($user["email"] ?? "") ?>"
+                        placeholder="contoh : nama@gmail.com"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
                     <label>NISN</label>
-                    <input type="text"
-                           name="nisn"
-                           value="<?= htmlspecialchars($user['nisn']) ?>"
-                           required>
+
+                    <input
+                        type="text"
+                        name="nisn"
+                        value="<?= htmlspecialchars($user["nisn"]) ?>"
+                        required
+                    >
+
                 </div>
 
+
                 <div class="form-group">
+
                     <label>Nama Lengkap</label>
-                    <input type="text"
-                           name="nama"
-                           value="<?= htmlspecialchars($user['nama']) ?>"
-                           required>
+
+                    <input
+                        type="text"
+                        name="nama"
+                        value="<?= htmlspecialchars($user["nama"]) ?>"
+                        required
+                    >
+
                 </div>
 
+
                 <div class="form-group">
+
                     <label>Kelas</label>
-                    <input type="text"
-                           name="kelas"
-                           value="<?= htmlspecialchars($user['kelas']) ?>"
-                           required>
+
+                    <input
+                        type="text"
+                        name="kelas"
+                        value="<?= htmlspecialchars($user["kelas"]) ?>"
+                        required
+                    >
+
                 </div>
 
+
                 <div class="form-group">
+
                     <label>No. Telepon</label>
-                    <input type="text"
-                           name="no_telepon"
-                           value="<?= htmlspecialchars($user['no_telepon']) ?>"
-                           required>
+
+                    <input
+                        type="text"
+                        name="no_telepon"
+                        value="<?= htmlspecialchars($user["no_telepon"]) ?>"
+                        required
+                    >
+
                 </div>
+
 
                 <div class="profile-actions">
 
-                    <button type="submit"
-                            name="simpan"
-                            class="btn-profilee">
+                    <a
+                        href="profil_user.php"
+                        class="profile-back-button"
+                    >
+                        Kembali
+                    </a>
+
+                    <button
+                        type="submit"
+                        class="profile-edit-button"
+                    >
                         Simpan Perubahan
                     </button>
-
-                    <a href="profil_user.php"
-                       class="btn-profilei">
-                        Batal
-                    </a>
 
                 </div>
 
@@ -132,7 +194,26 @@ if (isset($_POST["simpan"])) {
 
     </div>
 
-</div>
+</main>
+
+
+<script>
+document.getElementById("foto").onchange = function () {
+
+    if (this.files[0]) {
+
+        if (this.files[0].size > 2 * 1024 * 1024) {
+            alert("Ukuran foto maksimal 2 MB.");
+            this.value = "";
+            return;
+        }
+
+        document.getElementById("preview").src =
+            URL.createObjectURL(this.files[0]);
+    }
+
+};
+</script>
 
 </body>
 </html>

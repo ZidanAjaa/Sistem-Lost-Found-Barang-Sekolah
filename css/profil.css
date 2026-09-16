@@ -1,4 +1,3 @@
-/* PROFIL USER */
 
 .profile-page {
     min-height: 100vh;
@@ -19,15 +18,17 @@
     border: 1px solid #ddd;
     border-radius: 8px;
 }
-
-/* HEADER */
-
 .profile-top {
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: flex-start;
 }
 
+.profile-user {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
 .profile-top h1 {
     margin: 0 0 8px;
     font-size: 32px;
@@ -36,7 +37,6 @@
 .profile-top p {
     margin: 0;
     color: #666;
-    font-size: 16px;
 }
 
 .status-active {
@@ -52,7 +52,29 @@
     background: #ddd;
 }
 
-/* DATA */
+.profile-photo {
+    width: 65px;
+    height: 65px;
+    overflow: hidden;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid #4432df;
+    border-radius: 50%;
+    background: #eeeaff;
+}
+
+.profile-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-photo i {
+    color: #4432df;
+    font-size: 28px;
+}
 
 .profile-grid {
     display: grid;
@@ -64,7 +86,6 @@
     padding: 18px 20px;
     border: 1px solid #ddd;
     border-radius: 6px;
-    background: #fff;
 }
 
 .info-box label {
@@ -78,92 +99,89 @@
     font-size: 17px;
 }
 
-/* BUTTON */
-
 .profile-actions {
     display: flex;
     justify-content: flex-end;
     gap: 10px;
-    flex-wrap: wrap;
-    margin-top: 25px;
-    padding-top: 20px;
-    border-top: 1px solid #ddd;
+    margin-top: 30px;
+    padding-top: 25px;
+    border-top: 1px solid #eee;
+}
+
+.profile-actions a {
+    width: 145px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    box-sizing: border-box;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
 }
 
 .btn-edit {
-    padding: 10px 16px;
-    border: 1px solid #bbbbbb;
-    border-radius: 5px;
     background: #ffc400;
     color: #fff;
-    font-size: 14px;
-    font-weight: 600;
-    text-decoration: none;
-    cursor: pointer;
 }
-.btn-kembali{
-    padding: 10px 16px;
-    border: 1px solid #bbbbbb;
-    border-radius: 5px;
+
+.btn-kembali {
     background: #0371f6;
     color: #fff;
-    font-size: 14px;
-    font-weight: 600;
-    text-decoration: none;
-    cursor: pointer;
 }
-.btn-hapus{
-    padding: 10px 16px;
-    border: 1px solid #bbbbbb;
-    border-radius: 5px;
+
+.btn-hapus {
     background: #f70707;
     color: #fff;
-    font-size: 14px;
-    font-weight: 600;
-    text-decoration: none;
-    cursor: pointer;
 }
-.btn-logout{
-    padding: 10px 16px;
-    border: 1px solid #bbbbbb;
-    border-radius: 5px;
-    background: #000000;
+
+.btn-logout {
+    background: #000;
     color: #fff;
-    font-size: 14px;
-    font-weight: 600;
-    text-decoration: none;
-    cursor: pointer;
 }
-.btn-profile:hover {
-    background: #f0f0f0;
+
+.btn-edit:hover {
+    background: #e0ad00;
 }
-.btn-profilee {
-    padding: 10px 16px;
-    border: 1px solid #bbbbbb;
-    border-radius: 5px;
-    background: #11ff00;
-    color: #fff;
-    font-size: 14px;
-    font-weight: 600;
-    text-decoration: none;
-    cursor: pointer;
+
+.btn-kembali:hover {
+    background: #025bc5;
 }
-.btn-profilee:hover {
-    background: #0f3b02;
+
+.btn-hapus:hover {
+    background: #c90000;
 }
+
+.btn-logout:hover {
+    background: #333;
+}
+
+.btn-profile,
+.btn-profilee,
 .btn-profilei {
     padding: 10px 16px;
-    border: 1px solid #bbbbbb;
+    border: 1px solid #bbb;
     border-radius: 5px;
-    background: #ff0000;
     color: #fff;
     font-size: 14px;
     font-weight: 600;
     text-decoration: none;
     cursor: pointer;
 }
-.btn-profilei:hover {
-    background: #ff8b07;
+
+.btn-profile {
+    background: #f0f0f0;
+    color: #222;
+}
+
+.btn-profilee {
+    background: #11ff00;
+}
+
+.btn-profilei {
+    background: #ff0000;
 }
 
 .profile-form {
@@ -189,7 +207,6 @@
     box-sizing: border-box;
     border: 1px solid #ccc;
     border-radius: 5px;
-    background: #fff;
     font-size: 15px;
 }
 
@@ -213,29 +230,17 @@
     border-radius: 5px;
     background: #f7f7f7;
 }
-
-/* MOBILE */
-
-@media (max-width: 700px) {
-    .profile-page {
-        padding: 25px 15px;
-    }
-
+@media (max-width: 768px) {
     .profile-card {
-        padding: 25px 18px;
+    padding: 25px;
     }
-
-    .profile-top {
-        flex-direction: column;
-        gap: 15px;
-    }
-
     .profile-grid {
-        grid-template-columns: 1fr;
+    grid-template-columns: 1fr;
     }
-
     .profile-actions {
-        justify-content: flex-start;
+    flex-wrap: wrap;
     }
-    
+    .profile-actions a {
+    width: 140px;
+    }
 }
