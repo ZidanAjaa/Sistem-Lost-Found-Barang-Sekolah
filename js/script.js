@@ -1,14 +1,17 @@
 document.addEventListener("DOMContentLoaded", function () {
-
-    const searchInput = document.querySelector(".search-box input");
-    const searchForm = document.querySelector(".search-box");
+    const searchInput = document.getElementById("barang-search");
+    const searchForm = document.getElementById("barang-search-form");
     const cards = document.querySelectorAll(".barang-card");
     const statusButtons = document.querySelectorAll(".filter-btn");
     const categoryButtons = document.querySelectorAll(".category-btn");
-    const countText = document.querySelector(".section-header p");
+    const countText = document.getElementById("barang-count");
 
-    let selectedStatus = "Semua";
-    let selectedCategory = "Semua";
+    if (!searchInput || !searchForm || !countText) {
+        return;
+    }
+
+    let selectedStatus = "semua";
+    let selectedCategory = "semua";
 
     function filterBarang() {
 
@@ -19,47 +22,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const text = card.textContent.toLowerCase();
 
-            const category = card
-                .querySelector(".category-label")
-                .textContent
-                .trim();
-
-            const badge = card.querySelector(".status-badge");
-
-            const itemStatus = badge.classList.contains("status-found")
-                ? "Ditemukan"
-                : "Hilang";
-
-            const matchSearch =
-                !keyword || text.includes(keyword);
-
-            const matchStatus =
-                selectedStatus === "Semua" ||
-                itemStatus === selectedStatus;
-
-            let matchCategory = true;
-
-            if (selectedCategory !== "Semua") {
-
-                if (selectedCategory === "Tas & Dompet") {
-
-                    matchCategory =
-                        category === "Tas" ||
-                        category === "Dompet";
-
-                } else {
-
-                    matchCategory =
-                        category.toLowerCase() ===
-                        selectedCategory.toLowerCase();
-
-                }
-            }
-
-            const show =
-                matchSearch &&
-                matchStatus &&
-                matchCategory;
+            const status = card.dataset.status;
+            const category = card.dataset.category;
+            const matchSearch = !keyword || text.includes(keyword);
+            const matchStatus = selectedStatus === "semua" || status === selectedStatus;
+            const matchCategory = selectedCategory === "semua" ||
+                category === selectedCategory ||
+                (selectedCategory === "tas & dompet" &&
+                 (category === "tas" || category === "dompet"));
+            const show = matchSearch && matchStatus && matchCategory;
 
             card.style.display = show ? "" : "none";
 
@@ -91,8 +62,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             button.classList.add("active");
 
-            selectedStatus =
-                button.textContent.trim();
+            selectedStatus = button.dataset.status;
 
             filterBarang();
         });
@@ -109,8 +79,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             button.classList.add("active");
 
-            selectedCategory =
-                button.textContent.trim();
+            selectedCategory = button.dataset.category;
 
             filterBarang();
         });

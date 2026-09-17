@@ -81,8 +81,7 @@ while ($row = mysqli_fetch_assoc($result)) {
         "pemilik" => trim($row["pemilik"] . 
             (!empty($row["kelas"]) ? " - " . $row["kelas"] : "")),
         "no_telepon" => $row["no_telepon"] ?? "",
-        "status" => $row["status_barang"] === "Hilang
-        "
+        "status" => $row["status_barang"] === "Hilang"
             ? "Belum Ditemukan"
             : "Ditemukan",
         "status_raw" => $row["status_barang"]
@@ -151,22 +150,6 @@ while ($row = mysqli_fetch_assoc($result)) {
                 di SMK PGRI 3 Tlogomas Malang. Cepat, mudah, dan terpercaya.
             </p>
 
-            <form class="search-box" action="index.php" method="GET">
-                <span class="search-icon"></span>
-
-                <input type="text"
-                       name="search"
-                       value="<?= htmlspecialchars($search) ?>"
-                       placeholder="Cari nama barang, lokasi...">
-
-                <?php if ($category): ?>
-                    <input type="hidden"
-                           name="category"
-                           value="<?= htmlspecialchars($category) ?>">
-                <?php endif; ?>
-
-                <button type="submit">Cari</button>
-            </form>
         </div>
 
         <div class="hero-image"></div></div>
@@ -194,55 +177,97 @@ while ($row = mysqli_fetch_assoc($result)) {
 
 <section class="barang-section" id="daftar-barang">
     <div class="container">
+
         <div class="section-header">
             <div>
                 <h2>Daftar Barang</h2>
-                <p><?= count($barang) ?> barang ditemukan</p>
+                <p id="barang-count"><?= count($barang) ?> barang ditemukan</p>
             </div>
-            <div class="filter-status">
-                <button class="filter-btn active">Semua</button>
-                <button class="filter-btn">Hilang</button>
-                <button class="filter-btn">Ditemukan</button>
+        </div>
+
+        <div class="barang-toolbar">
+            <div class="barang-search">
+                <form class="search-box" id="barang-search-form">
+                <span class="search-icon">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </span>
+
+                <input
+                    type="text"
+                    id="barang-search"
+                    value="<?= htmlspecialchars($search) ?>"
+                    placeholder="Cari nama barang, lokasi, atau kategori..."
+                    autocomplete="off"
+                >
+
+                <button type="submit">Cari</button>
+                </form>
+            </div>
+
+            <div class="filter-status" aria-label="Filter status barang">
+                <button type="button" class="filter-btn active" data-status="semua">
+                    Semua
+                </button>
+
+                <button type="button" class="filter-btn" data-status="hilang">
+                    Hilang
+                </button>
+
+                <button type="button" class="filter-btn" data-status="ditemukan">
+                    Ditemukan
+                </button>
             </div>
         </div>
 
         <div class="category-list">
-            <a href="index.php"
-               class="category-btn <?= !$category ? 'active' : '' ?>">
-                Semua</a>
+            <button type="button"
+                    class="category-btn active"
+                    data-category="semua">
+                Semua Kategori
+            </button>
 
-              <?php while ($cat = mysqli_fetch_assoc($categories)): ?>
-                <a href="index.php?category=<?= urlencode($cat["nama_kategori"]) ?>"
-                   class="category-btn">
+            <?php
+            mysqli_data_seek($categories, 0);
+            while ($cat = mysqli_fetch_assoc($categories)):
+            ?>
+                <button type="button"
+                        class="category-btn"
+                        data-category="<?= htmlspecialchars(strtolower($cat["nama_kategori"])) ?>">
                     <?= htmlspecialchars($cat["nama_kategori"]) ?>
-                </a>
+                </button>
             <?php endwhile; ?>
         </div>
 
-        <div class="barang-grid">
+        <div class="barang-grid" id="barang-grid">
             <?php foreach ($barang as $item): ?>
-              <article class="barang-card">
-                <div class="barang-image">
-                        <img src="<?= htmlspecialchars($item["gambar"]) ?>"
-                             alt="<?= htmlspecialchars($item["nama"]) ?>">
-                <span class="status-badge <?= 
-                            $item["status_raw"] === "Ditemukan"
-                            ? "status-found"
-                            : "status-lost"
-                        ?>">
+                <article
+                    class="barang-card"
+                    data-status="<?= strtolower($item["status_raw"]) ?>"
+                    data-category="<?= htmlspecialchars(strtolower($item["kategori"])) ?>"
+                >
+                    <div class="barang-image">
+                        <img
+                            src="<?= htmlspecialchars($item["gambar"]) ?>"
+                            alt="<?= htmlspecialchars($item["nama"]) ?>"
+                        >
+
+                        <span class="status-badge <?= $item["status_raw"] === "Ditemukan" ? "status-found" : "status-lost" ?>">
                             <?= $item["status"] ?>
                         </span>
                     </div>
 
-            <div class="barang-content">
-                <span class="category-label">
+                    <div class="barang-content">
+                        <span class="category-label">
                             <?= htmlspecialchars($item["kategori"]) ?>
                         </span>
+
                         <h3><?= htmlspecialchars($item["nama"]) ?></h3>
+
                         <p class="barang-description">
                             <?= htmlspecialchars($item["deskripsi"]) ?>
                         </p>
-              <div class="barang-info">
+
+                        <div class="barang-info">
                             <span>
                                 <i class="fa-solid fa-location-dot"></i>
                                 <?= htmlspecialchars($item["lokasi"]) ?>
@@ -254,45 +279,55 @@ while ($row = mysqli_fetch_assoc($result)) {
                             </span>
                         </div>
 
-                         <div class="barang-footer">
-                              <span class="owner">
+                        <div class="barang-footer">
+                            <span class="owner">
                                 <?= htmlspecialchars($item["pemilik"] ?: "Pelapor") ?>
                             </span>
-            <div class="card-buttons">
-         <a href="detail_barang.php?id=<?= $item["id"] ?>"
-             class="contact-btn detail-btn">Detail</a>
 
-<?php if (!empty($item["no_telepon"])):
-     $nomorWA = preg_replace(
-    '/\D+/','',
-        $item["no_telepon"]
-    );
-     if (substr($nomorWA, 0, 1) === "0") {
-    $nomorWA = "62" . substr($nomorWA, 1);
-      }
+                            <div class="card-buttons">
+                                <a
+                                    href="detail_barang.php?id=<?= $item["id"] ?>"
+                                    class="contact-btn detail-btn"
+                                >
+                                    Detail
+                                </a>
 
- $pesan = urlencode(
-    "Halo, saya menghubungi melalui LostFound.sch.\n\n" .
-    "Saya melihat laporan mengenai barang \"" . $item["nama"] .
-    "\". Saya ingin menanyakan terkait barang tersebut dan memastikan apakah barang tersebut masih diperlukan.\n\n" .
-    "Mohon informasinya. Terima kasih."
-);
-    ?>
-<a href="https://wa.me/<?= $nomorWA ?>?text=<?= $pesan ?>"
-    target="_blank"
-        class="contact-btn">
-            <i class="fa-brands fa-whatsapp"></i>Hubungi</a>
-   <?php else: ?>
-    <span class="contact-btn"
-            style="opacity:.6; pointer-events:none;">Tidak Tersedia
+                                <?php if (!empty($item["no_telepon"])): ?>
+                                    <?php
+                                    $nomorWA = preg_replace('/\D+/', '', $item["no_telepon"]);
+
+                                    if (substr($nomorWA, 0, 1) === "0") {
+                                        $nomorWA = "62" . substr($nomorWA, 1);
+                                    }
+
+                                    $pesan = urlencode(
+                                        "Halo, saya menghubungi melalui LostFound.sch.\n\n" .
+                                        "Saya melihat laporan mengenai barang \"" . $item["nama"] .
+                                        "\". Saya ingin menanyakan terkait barang tersebut dan memastikan apakah barang tersebut masih diperlukan.\n\n" .
+                                        "Mohon informasinya. Terima kasih."
+                                    );
+                                    ?>
+
+                                    <a
+                                        href="https://wa.me/<?= $nomorWA ?>?text=<?= $pesan ?>"
+                                        target="_blank"
+                                        class="contact-btn"
+                                    >
+                                        <i class="fa-brands fa-whatsapp"></i>
+                                        Hubungi
+                                    </a>
+                                <?php else: ?>
+                                    <span class="contact-btn" style="opacity:.6; pointer-events:none;">
+                                        Tidak Tersedia
                                     </span>
                                 <?php endif; ?>
                             </div>
                         </div>
                     </div>
                 </article>
-                <?php endforeach; ?>
-         </div>
+            <?php endforeach; ?>
+        </div>
+
     </div>
 </section>
 
