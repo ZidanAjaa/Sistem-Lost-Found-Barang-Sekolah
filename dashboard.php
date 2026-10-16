@@ -11,6 +11,73 @@ require_once __DIR__ . "/koneksi.php";
 $nama = $_SESSION['nama'] ?? 'User';
 $role = strtolower($_SESSION['role'] ?? 'user');
 
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+$csrfToken = $_SESSION['csrf_token'];
+$dashboardNotice = $_SESSION['dashboard_notice'] ?? '';
+unset($_SESSION['dashboard_notice']);
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($role !== 'admin' || !hash_equals($csrfToken, $_POST['csrf_token'] ?? '')) {
+        http_response_code(403);
+        exit('Permintaan tidak diizinkan.');
+    }
+
+    $laporanId = (int) ($_POST['laporan_id'] ?? 0);
+    $statusBaru = $_POST['status'] ?? '';
+
+    if ($laporanId <= 0 || !in_array($statusBaru, ['Diproses', 'Selesai'], true)) {
+        $_SESSION['dashboard_notice'] = 'Permintaan perubahan status tidak valid.';
+        header('Location: dashboard.php#laporan-masuk');
+        exit;
+    }
+
+    $stmtLaporan = mysqli_prepare($koneksi, "SELECT jenis_laporan, status FROM laporan WHERE id = ? LIMIT 1");
+    mysqli_stmt_bind_param($stmtLaporan, "i", $laporanId);
+    mysqli_stmt_execute($stmtLaporan);
+    $laporanStatus = mysqli_fetch_assoc(mysqli_stmt_get_result($stmtLaporan));
+    mysqli_stmt_close($stmtLaporan);
+
+    $bolehDiproses = $laporanStatus && $laporanStatus['status'] === 'Pending' && $statusBaru === 'Diproses';
+    $bolehDiselesaikan = $laporanStatus && $laporanStatus['status'] === 'Diproses' && $statusBaru === 'Selesai';
+
+    if (!$bolehDiproses && !$bolehDiselesaikan) {
+        $_SESSION['dashboard_notice'] = 'Laporan tidak ditemukan atau statusnya tidak dapat diubah.';
+        header('Location: dashboard.php#laporan-masuk');
+        exit;
+    }
+
+    mysqli_begin_transaction($koneksi);
+    try {
+        $stmtUpdate = mysqli_prepare($koneksi, "UPDATE laporan SET status = ?, updated_at = NOW() WHERE id = ?");
+        mysqli_stmt_bind_param($stmtUpdate, "si", $statusBaru, $laporanId);
+        mysqli_stmt_execute($stmtUpdate);
+        mysqli_stmt_close($stmtUpdate);
+
+        if ($statusBaru === 'Selesai') {
+            $stmtBarang = mysqli_prepare($koneksi, "
+                UPDATE barang b
+                JOIN laporan l ON l.barang_id = b.id
+                SET b.status_barang = 'Dikembalikan', b.updated_at = NOW()
+                WHERE l.id = ?
+            ");
+            mysqli_stmt_bind_param($stmtBarang, "i", $laporanId);
+            mysqli_stmt_execute($stmtBarang);
+            mysqli_stmt_close($stmtBarang);
+        }
+
+        mysqli_commit($koneksi);
+        $_SESSION['dashboard_notice'] = 'Status laporan berhasil diperbarui.';
+    } catch (Throwable $e) {
+        mysqli_rollback($koneksi);
+        throw $e;
+    }
+
+    header('Location: dashboard.php#laporan-masuk');
+    exit;
+}
+
 $stats = mysqli_fetch_assoc(mysqli_query($koneksi, "
     SELECT
         SUM(CASE WHEN status_barang = 'Hilang' THEN 1 ELSE 0 END) AS total_hilang,
@@ -41,6 +108,40 @@ $recent_barang = mysqli_query($koneksi, "
     ORDER BY b.created_at DESC
     LIMIT 6
 ");
+
+$recent_reports = mysqli_query($koneksi, "
+    SELECT l.id, l.jenis_laporan, l.status, l.tanggal_lapor, l.created_at,
+           b.nama_barang, b.foto, b.deskripsi, b.status_barang, b.lokasi_kejadian, b.tanggal_kejadian,
+           u.nama AS pelapor, u.no_telepon
+    FROM laporan l
+    JOIN barang b ON b.id = l.barang_id
+    JOIN users u ON u.id = l.user_id
+    ORDER BY l.created_at DESC
+    LIMIT 30
+");
+
+$my_report_stats = mysqli_fetch_assoc(mysqli_query($koneksi, "
+    SELECT
+        COUNT(*) AS total,
+        SUM(status = 'Pending') AS menunggu,
+        SUM(status = 'Diproses') AS diproses,
+        SUM(status = 'Selesai') AS selesai
+    FROM laporan
+    WHERE user_id = " . (int) $_SESSION['user_id']
+)) ?: ['total' => 0, 'menunggu' => 0, 'diproses' => 0, 'selesai' => 0];
+
+$my_reports_stmt = mysqli_prepare($koneksi, "
+    SELECT l.id, l.jenis_laporan, l.status, l.created_at, b.nama_barang
+    FROM laporan l
+    JOIN barang b ON b.id = l.barang_id
+    WHERE l.user_id = ?
+    ORDER BY l.created_at DESC
+    LIMIT 10
+");
+$currentUserId = (int) $_SESSION['user_id'];
+mysqli_stmt_bind_param($my_reports_stmt, "i", $currentUserId);
+mysqli_stmt_execute($my_reports_stmt);
+$my_reports = mysqli_stmt_get_result($my_reports_stmt);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -301,6 +402,37 @@ $recent_barang = mysqli_query($koneksi, "
             color: #475467;
             background: #f8faff;
         }
+        .report-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .report-actions form { margin: 0; }
+        .report-actions button {
+            border: 0;
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-weight: 700;
+            cursor: pointer;
+            color: #fff;
+            background: #3f2de0;
+        }
+        .report-actions button.complete { background: #16804a; }
+        .pill-pending { background: #fff4d6; color: #986400; }
+        .pill-progress { background: #e8edff; color: #3947ce; }
+        .pill-done { background: #ebf9f1; color: #1e7d4f; }
+        .notice {
+            padding: 14px 18px;
+            border-radius: 12px;
+            background: #ebf9f1;
+            color: #17633f;
+            font-weight: 700;
+        }
+        .table-wrap { overflow-x: auto; }
+        .workflow-note {
+            margin: 0 0 16px;
+            line-height: 1.6;
+        }
         .muted { color: #667085; }
         @media (max-width: 900px) {
             .admin-shell { grid-template-columns: 1fr; }
@@ -321,6 +453,10 @@ $recent_barang = mysqli_query($koneksi, "
                 <a href="logout.php">Logout</a>
             </nav>
         </div>
+
+        <?php if ($dashboardNotice !== ''): ?>
+            <div class="notice" style="margin-bottom:22px;"><?= htmlspecialchars($dashboardNotice) ?></div>
+        <?php endif; ?>
 
         <?php if ($role === 'admin'): ?>
             <div class="admin-shell">
@@ -355,7 +491,7 @@ $recent_barang = mysqli_query($koneksi, "
                                 <p class="eyebrow">Overview</p>
                                 <h2>Analisa Data Barang</h2>
                             </div>
-                            <a href="lapor_hilang.php" class="btn btn-primary">+ Buat Laporan</a>
+                            <a href="#laporan-masuk" class="btn btn-primary">Tinjau Laporan Masuk</a>
                         </div>
 
                         <div class="stats-grid">
@@ -421,9 +557,9 @@ $recent_barang = mysqli_query($koneksi, "
                             <div class="panel">
                                 <h2>Tindakan Cepat</h2>
                                 <div class="btn-row vertical">
-                                    <a href="barang_crud.php" class="btn btn-primary">Kelola Data Barang</a>
-                                    <a href="lapor_hilang.php" class="btn btn-secondary">Tambah Laporan Hilang</a>
-                                    <a href="lapor_temuan.php" class="btn btn-secondary">Tambah Laporan Temuan</a>
+                                    <a href="#laporan-masuk" class="btn btn-primary">Verifikasi Laporan Masuk</a>
+                                    <a href="laporan_barang_admin.php" class="btn btn-secondary">Lihat Data Barang</a>
+                                    <a href="index.php#daftar-barang" class="btn btn-secondary">Lihat Barang Dipublikasikan</a>
                                 </div>
                             </div>
                         </div>
@@ -514,15 +650,85 @@ $recent_barang = mysqli_query($koneksi, "
                         <div class="section-header">
                             <div>
                                 <p class="eyebrow">Reports</p>
-                                <h2>Laporan Masuk</h2>
+                                <h2>Verifikasi Laporan Masuk</h2>
                             </div>
                         </div>
 
                         <div class="panel">
-                            <p class="muted">Aktivitas laporan terbaru akan muncul di sini setelah sistem pelaporan disinkronkan.</p>
-                            <div class="btn-row">
-                                <a href="lapor_hilang.php" class="btn btn-secondary">Laporan Hilang</a>
-                                <a href="lapor_temuan.php" class="btn btn-secondary">Laporan Temuan</a>
+                            <p class="muted workflow-note">Periksa informasi dan hubungi pelapor untuk konfirmasi. Barang temuan hanya tampil di halaman publik setelah admin memilih “Verifikasi &amp; Publikasikan”.</p>
+                            <div class="table-wrap">
+                                <table class="table-list" style="width:100%;">
+                                    <thead>
+                                        <tr>
+                                            <th>Barang</th>
+                                            <th>Jenis</th>
+                                            <th>Pelapor</th>
+                                            <th>Tanggal Laporan</th>
+                                            <th>Status</th>
+                                            <th>Tindakan</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php if (!$recent_reports || mysqli_num_rows($recent_reports) === 0): ?>
+                                            <tr><td colspan="6" class="muted">Belum ada laporan yang masuk.</td></tr>
+                                        <?php else: ?>
+                                            <?php while ($report = mysqli_fetch_assoc($recent_reports)): ?>
+                                                <?php
+                                                $statusLabel = $report['status'] === 'Pending'
+                                                    ? 'Menunggu Verifikasi'
+                                                    : ($report['status'] === 'Selesai'
+                                                        ? 'Sudah Diambil / Selesai'
+                                                        : ($report['jenis_laporan'] === 'Temuan' ? 'Dipublikasikan' : 'Dalam Tindak Lanjut'));
+                                                $statusClass = $report['status'] === 'Pending'
+                                                    ? 'pill-pending'
+                                                    : ($report['status'] === 'Selesai' ? 'pill-done' : 'pill-progress');
+                                                $nomorPelapor = preg_replace('/\D+/', '', $report['no_telepon'] ?? '');
+                                                if (substr($nomorPelapor, 0, 1) === '0') {
+                                                    $nomorPelapor = '62' . substr($nomorPelapor, 1);
+                                                }
+                                                ?>
+                                                <tr>
+                                                    <td>
+                                                        <strong><?= htmlspecialchars($report['nama_barang']) ?></strong><br>
+                                                        <span class="muted"><?= htmlspecialchars($report['lokasi_kejadian']) ?> · <?= htmlspecialchars(date('d-m-Y', strtotime($report['tanggal_kejadian']))) ?></span><br>
+                                                        <span class="muted"><?= htmlspecialchars(mb_strimwidth($report['deskripsi'] ?? '', 0, 120, '...')) ?></span>
+                                                        <?php if (!empty($report['foto'])): ?>
+                                                            <br><a class="table-link" href="<?= htmlspecialchars($report['foto']) ?>" target="_blank" rel="noopener">Lihat foto</a>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                    <td><?= htmlspecialchars($report['jenis_laporan'] === 'Temuan' ? 'Barang Temuan' : 'Barang Hilang') ?></td>
+                                                    <td>
+                                                        <?= htmlspecialchars($report['pelapor']) ?><br>
+                                                        <?php if ($nomorPelapor !== ''): ?>
+                                                            <a class="table-link" href="https://wa.me/<?= htmlspecialchars($nomorPelapor) ?>" target="_blank" rel="noopener">Konfirmasi via WhatsApp</a>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                    <td class="muted"><?= htmlspecialchars(date('d-m-Y', strtotime($report['created_at']))) ?></td>
+                                                    <td><span class="pill <?= $statusClass ?>"><?= htmlspecialchars($statusLabel) ?></span></td>
+                                                    <td>
+                                                        <?php if ($report['status'] === 'Pending' || $report['status'] === 'Diproses'): ?>
+                                                            <div class="report-actions">
+                                                                <form method="POST" action="dashboard.php#laporan-masuk">
+                                                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                                                    <input type="hidden" name="laporan_id" value="<?= (int) $report['id'] ?>">
+                                                                    <?php if ($report['status'] === 'Pending'): ?>
+                                                                        <input type="hidden" name="status" value="Diproses">
+                                                                        <button type="submit"><?= $report['jenis_laporan'] === 'Temuan' ? 'Verifikasi & Publikasikan' : 'Mulai Tindak Lanjut' ?></button>
+                                                                    <?php else: ?>
+                                                                        <input type="hidden" name="status" value="Selesai">
+                                                                        <button class="complete" type="submit"><?= $report['jenis_laporan'] === 'Temuan' ? 'Tandai Sudah Diambil' : 'Tandai Selesai' ?></button>
+                                                                    <?php endif; ?>
+                                                                </form>
+                                                            </div>
+                                                        <?php else: ?>
+                                                            <span class="muted">Tidak ada tindakan</span>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                </tr>
+                                            <?php endwhile; ?>
+                                        <?php endif; ?>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </section>
@@ -549,19 +755,19 @@ $recent_barang = mysqli_query($koneksi, "
         <?php else: ?>
             <div class="stats-grid">
                 <div class="stat-card">
-                    <h3>Barang Saya</h3>
-                    <p class="value"><?= (int) mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM barang WHERE pemilik_id = " . (int) $_SESSION['user_id']))['total'] ?? 0 ?></p>
-                    <div class="note">Laporan yang sudah kamu buat</div>
+                    <h3>Laporan Saya</h3>
+                    <p class="value"><?= (int) ($my_report_stats['total'] ?? 0) ?></p>
+                    <div class="note">Laporan kehilangan dan penemuan</div>
                 </div>
                 <div class="stat-card">
-                    <h3>Barang Hilang</h3>
-                    <p class="value"><?= (int) mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM barang WHERE pemilik_id = " . (int) $_SESSION['user_id'] . " AND status_barang = 'Hilang'"))['total'] ?? 0 ?></p>
-                    <div class="note">Data barang yang kamu laporkan</div>
+                    <h3>Menunggu Verifikasi</h3>
+                    <p class="value"><?= (int) ($my_report_stats['menunggu'] ?? 0) ?></p>
+                    <div class="note">Sedang diperiksa admin</div>
                 </div>
                 <div class="stat-card">
-                    <h3>Barang Ditemukan</h3>
-                    <p class="value"><?= (int) mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM barang WHERE pemilik_id = " . (int) $_SESSION['user_id'] . " AND status_barang = 'Ditemukan'"))['total'] ?? 0 ?></p>
-                    <div class="note">Status barang temuan</div>
+                    <h3>Diproses</h3>
+                    <p class="value"><?= (int) ($my_report_stats['diproses'] ?? 0) ?></p>
+                    <div class="note">Publikasi atau tindak lanjut</div>
                 </div>
             </div>
 
@@ -575,16 +781,46 @@ $recent_barang = mysqli_query($koneksi, "
                     </ul>
                     <div class="btn-row">
                         <a href="profil_user.php" class="btn btn-primary">Lihat Profil</a>
-                        <a href="barang_crud.php" class="btn btn-secondary">Kelola Barang</a>
+                        <a href="index.php#daftar-barang" class="btn btn-secondary">Lihat Barang Dipublikasikan</a>
                     </div>
                 </div>
 
                 <div class="panel">
-                    <h2>Laporkan Barang</h2>
-                    <p class="muted">Pilih jenis laporan yang ingin kamu buat untuk barang hilang atau barang temuan.</p>
+                    <h2>Laporkan Kehilangan atau Temuan</h2>
+                    <p class="muted workflow-note">Laporan dikirim ke admin untuk diperiksa. Barang temuan tidak langsung tampil ke publik; admin akan memverifikasi dan memublikasikannya setelah konfirmasi.</p>
                     <div class="btn-row">
                         <a href="lapor_hilang.php" class="btn btn-primary">Lapor Barang Hilang</a>
                         <a href="lapor_temuan.php" class="btn btn-secondary">Lapor Barang Temuan</a>
+                    </div>
+                    <h3>Laporan Terbaru Saya</h3>
+                    <div class="table-wrap">
+                        <table class="table-list" style="width:100%;">
+                            <thead><tr><th>Barang</th><th>Jenis</th><th>Status</th><th>Tanggal</th></tr></thead>
+                            <tbody>
+                                <?php if (!$my_reports || mysqli_num_rows($my_reports) === 0): ?>
+                                    <tr><td colspan="4" class="muted">Kamu belum mengirim laporan.</td></tr>
+                                <?php else: ?>
+                                    <?php while ($report = mysqli_fetch_assoc($my_reports)): ?>
+                                        <?php
+                                        $statusLabel = $report['status'] === 'Pending'
+                                            ? 'Menunggu Verifikasi'
+                                            : ($report['status'] === 'Selesai'
+                                                ? 'Sudah Diambil / Selesai'
+                                                : ($report['jenis_laporan'] === 'Temuan' ? 'Dipublikasikan' : 'Dalam Tindak Lanjut'));
+                                        $statusClass = $report['status'] === 'Pending'
+                                            ? 'pill-pending'
+                                            : ($report['status'] === 'Selesai' ? 'pill-done' : 'pill-progress');
+                                        ?>
+                                        <tr>
+                                            <td><?= htmlspecialchars($report['nama_barang']) ?></td>
+                                            <td><?= htmlspecialchars($report['jenis_laporan'] === 'Temuan' ? 'Barang Temuan' : 'Barang Hilang') ?></td>
+                                            <td><span class="pill <?= $statusClass ?>"><?= htmlspecialchars($statusLabel) ?></span></td>
+                                            <td class="muted"><?= htmlspecialchars(date('d-m-Y', strtotime($report['created_at']))) ?></td>
+                                        </tr>
+                                    <?php endwhile; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
                     </div>
                     <div class="btn-row">
                         <a href="index.php" class="btn btn-outline">Lihat Beranda</a>

@@ -11,7 +11,8 @@ $user_id = (int) $_SESSION["user_id"];
 $success = "";
 $error = "";
 $edit_id = isset($_GET["edit"]) ? (int) $_GET["edit"] : 0;
-$selectedJenis = in_array($_GET["jenis"] ?? "Hilang", ["Hilang", "Temuan"], true) ? $_GET["jenis"] : "Hilang";
+$requestedJenis = $_GET["jenis"] ?? "Hilang";
+$selectedJenis = in_array($requestedJenis, ["Hilang", "Temuan"], true) ? $requestedJenis : "Hilang";
 
 function uploadFotoBarang($file): ?string
 {
@@ -103,6 +104,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $lokasi = trim($_POST["lokasi_kejadian"] ?? "");
         $tanggal = $_POST["tanggal_kejadian"] ?? "";
         $deskripsi = trim($_POST["deskripsi"] ?? "");
+        $statusBarang = $jenis === "Temuan" ? "Ditemukan" : "Hilang";
 
         if ($nama_barang === "" || $kategori_id <= 0 || $lokasi === "" || $tanggal === "" || $deskripsi === "") {
             $error = "Semua field wajib diisi.";
@@ -116,6 +118,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             if (mysqli_num_rows($kategoriResult) !== 1) {
                 $error = "Kategori tidak valid.";
             } else {
+                $transactionStarted = false;
                 try {
                     $foto = null;
                     if (isset($_FILES["foto"]) && $_FILES["foto"]["error"] !== UPLOAD_ERR_NO_FILE) {
@@ -139,26 +142,66 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                             unlink(__DIR__ . "/" . $existingBarang["foto"]);
                         }
 
+                        mysqli_begin_transaction($koneksi);
+                        $transactionStarted = true;
                         $stmtUpdate = mysqli_prepare($koneksi, "
                             UPDATE barang
                             SET kategori_id = ?, nama_barang = ?, foto = ?, deskripsi = ?, lokasi_kejadian = ?, tanggal_kejadian = ?, status_barang = ?, updated_at = NOW()
                             WHERE id = ? AND pemilik_id = ?
                         ");
 
-                        mysqli_stmt_bind_param($stmtUpdate, "issssssii", $kategori_id, $nama_barang, $fotoFinal, $deskripsi, $lokasi, $tanggal, $jenis, $barang_id, $user_id);
+                        mysqli_stmt_bind_param($stmtUpdate, "issssssii", $kategori_id, $nama_barang, $fotoFinal, $deskripsi, $lokasi, $tanggal, $statusBarang, $barang_id, $user_id);
                         mysqli_stmt_execute($stmtUpdate);
                         mysqli_stmt_close($stmtUpdate);
 
+                        $stmtExistingReport = mysqli_prepare($koneksi, "SELECT id FROM laporan WHERE barang_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1");
+                        mysqli_stmt_bind_param($stmtExistingReport, "ii", $barang_id, $user_id);
+                        mysqli_stmt_execute($stmtExistingReport);
+                        $existingReport = mysqli_fetch_assoc(mysqli_stmt_get_result($stmtExistingReport));
+                        mysqli_stmt_close($stmtExistingReport);
+
+                        if ($existingReport) {
+                            $stmtReport = mysqli_prepare($koneksi, "
+                                UPDATE laporan
+                                SET jenis_laporan = ?, deskripsi = ?, status = 'Pending', updated_at = NOW()
+                                WHERE barang_id = ? AND user_id = ?
+                            ");
+                            mysqli_stmt_bind_param($stmtReport, "ssii", $jenis, $deskripsi, $barang_id, $user_id);
+                        } else {
+                            $stmtReport = mysqli_prepare($koneksi, "
+                                INSERT INTO laporan (user_id, barang_id, jenis_laporan, deskripsi, tanggal_lapor, status, created_at, updated_at)
+                                VALUES (?, ?, ?, ?, CURDATE(), 'Pending', NOW(), NOW())
+                            ");
+                            mysqli_stmt_bind_param($stmtReport, "iiss", $user_id, $barang_id, $jenis, $deskripsi);
+                        }
+                        mysqli_stmt_execute($stmtReport);
+                        mysqli_stmt_close($stmtReport);
+                        mysqli_commit($koneksi);
+                        $transactionStarted = false;
+
                         $success = "Barang berhasil diperbarui.";
                     } else {
+                        mysqli_begin_transaction($koneksi);
+                        $transactionStarted = true;
                         $stmtInsert = mysqli_prepare($koneksi, "
                             INSERT INTO barang (kategori_id, pemilik_id, nama_barang, foto, deskripsi, lokasi_kejadian, tanggal_kejadian, status_barang, created_at, updated_at)
                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
                         ");
 
-                        mysqli_stmt_bind_param($stmtInsert, "iissssss", $kategori_id, $user_id, $nama_barang, $foto, $deskripsi, $lokasi, $tanggal, $jenis);
+                        mysqli_stmt_bind_param($stmtInsert, "iissssss", $kategori_id, $user_id, $nama_barang, $foto, $deskripsi, $lokasi, $tanggal, $statusBarang);
                         mysqli_stmt_execute($stmtInsert);
                         mysqli_stmt_close($stmtInsert);
+
+                        $barang_id = mysqli_insert_id($koneksi);
+                        $stmtReport = mysqli_prepare($koneksi, "
+                            INSERT INTO laporan (user_id, barang_id, jenis_laporan, deskripsi, tanggal_lapor, status, created_at, updated_at)
+                            VALUES (?, ?, ?, ?, CURDATE(), 'Pending', NOW(), NOW())
+                        ");
+                        mysqli_stmt_bind_param($stmtReport, "iiss", $user_id, $barang_id, $jenis, $deskripsi);
+                        mysqli_stmt_execute($stmtReport);
+                        mysqli_stmt_close($stmtReport);
+                        mysqli_commit($koneksi);
+                        $transactionStarted = false;
 
                         $success = "Barang berhasil ditambahkan.";
                     }
@@ -166,6 +209,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $selectedJenis = $jenis;
                     $edit_id = 0;
                 } catch (Throwable $e) {
+                    if ($transactionStarted) {
+                        mysqli_rollback($koneksi);
+                    }
                     $error = "Gagal menyimpan data barang: " . htmlspecialchars($e->getMessage());
                 }
             }
@@ -181,7 +227,9 @@ if ($edit_id > 0) {
     mysqli_stmt_close($stmtEdit);
 
     if ($editData) {
-        $selectedJenis = $editData["status_barang"];
+        $selectedJenis = $editData["status_barang"] === "Ditemukan"
+            ? "Temuan"
+            : $editData["status_barang"];
     }
 }
 

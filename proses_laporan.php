@@ -125,7 +125,8 @@ try {
 
     $koneksi->commit();
 
-    header("Location: index.php?lapor=sukses&jenis=" . urlencode($jenis));
+    $_SESSION["dashboard_notice"] = "Laporan berhasil dikirim kepada admin dan menunggu pemeriksaan.";
+    header("Location: dashboard.php");
     exit;
 
 } catch (Throwable $e) {

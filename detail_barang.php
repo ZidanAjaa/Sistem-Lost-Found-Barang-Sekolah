@@ -18,14 +18,20 @@ $sql = "
         b.lokasi_kejadian,
         b.tanggal_kejadian,
         b.status_barang,
-        k.nama_kategori,
-        u.nama AS pemilik,
-        u.kelas,
-        u.no_telepon
+        k.nama_kategori
     FROM barang b
     LEFT JOIN kategori k ON k.id = b.kategori_id
-    LEFT JOIN users u ON u.id = b.pemilik_id
     WHERE b.id = ?
+      AND b.status_barang = 'Ditemukan'
+      AND (
+          NOT EXISTS (SELECT 1 FROM laporan l WHERE l.barang_id = b.id)
+          OR EXISTS (
+              SELECT 1 FROM laporan l
+              WHERE l.barang_id = b.id
+                AND l.jenis_laporan = 'Temuan'
+                AND l.status = 'Diproses'
+          )
+      )
     LIMIT 1
 ";
 
@@ -44,7 +50,17 @@ $foto = !empty($item['foto']) && file_exists(__DIR__ . '/' . $item['foto'])
     ? $item['foto']
     : 'https://placehold.co/900x600/f3f4f6/374151?text=Foto+Barang';
 
-$wa = !empty($item['no_telepon']) ? preg_replace('/\D+/', '', $item['no_telepon']) : '';
+$admin = mysqli_fetch_assoc(mysqli_query($koneksi, "
+    SELECT no_telepon
+    FROM users
+    WHERE role = 'admin' AND no_telepon <> ''
+    ORDER BY id ASC
+    LIMIT 1
+"));
+$wa = preg_replace('/\D+/', '', $admin['no_telepon'] ?? '');
+if (substr($wa, 0, 1) === '0') {
+    $wa = '62' . substr($wa, 1);
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -181,12 +197,8 @@ $wa = !empty($item['no_telepon']) ? preg_replace('/\D+/', '', $item['no_telepon'
                         <strong><?= htmlspecialchars(date('d F Y', strtotime($item['tanggal_kejadian']))) ?></strong>
                     </div>
                     <div class="meta-item">
-                        <span class="label">Pemilik</span>
-                        <strong><?= htmlspecialchars($item['pemilik'] ?: 'Tidak diketahui') ?></strong>
-                    </div>
-                    <div class="meta-item">
-                        <span class="label">Kelas</span>
-                        <strong><?= htmlspecialchars($item['kelas'] ?: '-') ?></strong>
+                        <span class="label">Verifikasi</span>
+                        <strong>Diperiksa admin</strong>
                     </div>
                 </div>
 
@@ -197,8 +209,8 @@ $wa = !empty($item['no_telepon']) ? preg_replace('/\D+/', '', $item['no_telepon'
 
                 <?php if ($wa !== ''): ?>
                     <div class="contact-box">
-                        <strong>Hubungi pelapor:</strong><br>
-                        <a href="https://wa.me/<?= htmlspecialchars($wa) ?>?text=<?= urlencode('Halo, saya ingin menanyakan tentang barang ' . $item['nama_barang'] . ' yang dilaporkan di LostFound.sch.') ?>" class="btn btn-primary" style="margin-top:12px;" target="_blank">
+                        <strong>Hubungi admin untuk konfirmasi dan pengambilan:</strong><br>
+                        <a href="https://wa.me/<?= htmlspecialchars($wa) ?>?text=<?= urlencode('Halo admin LostFound.sch, saya ingin mengonfirmasi kepemilikan barang ' . $item['nama_barang'] . ' yang dipublikasikan di website.') ?>" class="btn btn-primary" style="margin-top:12px;" target="_blank" rel="noopener">
                             <i class="fa-brands fa-whatsapp"></i> Chat WhatsApp
                         </a>
                     </div>

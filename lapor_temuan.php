@@ -34,8 +34,8 @@ textarea{min-height:120px;resize:vertical}
 <div class="form-page">
 <div class="form-card">
 <h1><i class="fa-solid fa-triangle-exclamation"></i> Lapor Barang Temuan</h1>
-<p class="subtitle">Isi data barang yang kamu temukan dengan lengkap agar pemiliknya mudah ditemukan.</p>
-<div class="notice">Laporan akan tersimpan sebagai <b>Ditemukan</b> dan masuk ke daftar barang.</div>
+<p class="subtitle">Isi nama, deskripsi, lokasi, tanggal, dan foto jika tersedia agar admin dapat memverifikasi barang.</p>
+<div class="notice">Laporan dikirim kepada admin untuk diperiksa. Barang tidak langsung ditampilkan ke publik; admin akan memublikasikannya setelah laporan dinyatakan valid.</div>
 
 <form action="proses_laporan.php" method="POST" enctype="multipart/form-data">
 <input type="hidden" name="jenis_laporan" value="Temuan">

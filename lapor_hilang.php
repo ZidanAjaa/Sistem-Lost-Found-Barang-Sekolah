@@ -34,8 +34,8 @@ textarea{min-height:120px;resize:vertical}
 <div class="form-page">
 <div class="form-card">
 <h1><i class="fa-solid fa-triangle-exclamation"></i> Lapor Barang Hilang</h1>
-<p class="subtitle">Isi data barang yang hilang dengan lengkap agar mudah dicocokkan.</p>
-<div class="notice">Laporan akan tersimpan sebagai <b>Hilang</b> dan masuk ke daftar barang.</div>
+<p class="subtitle">Isi data barang yang hilang dengan lengkap agar admin dapat membantu pencarian dan menghubungi kamu jika perlu konfirmasi.</p>
+<div class="notice">Laporan akan dikirim ke admin untuk diperiksa dan ditindaklanjuti. Status laporan dapat dilihat dari dashboard.</div>
 
 <form action="proses_laporan.php" method="POST" enctype="multipart/form-data">
 <input type="hidden" name="jenis_laporan" value="Hilang">

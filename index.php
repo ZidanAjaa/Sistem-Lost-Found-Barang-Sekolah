@@ -8,10 +8,18 @@ $search = trim($_GET["search"] ?? "");
 $category = trim($_GET["category"] ?? "");
 
 $stats = mysqli_fetch_assoc(mysqli_query($koneksi, "
-    SELECT COUNT(*) total_barang,
-    SUM(status_barang='Ditemukan') total_ditemukan
+    SELECT COUNT(*) AS total_barang,
+           SUM(status_barang = 'Ditemukan' AND (
+               NOT EXISTS (SELECT 1 FROM laporan l WHERE l.barang_id = barang.id)
+               OR EXISTS (
+                   SELECT 1 FROM laporan l
+                   WHERE l.barang_id = barang.id
+                     AND l.jenis_laporan = 'Temuan'
+                     AND l.status = 'Diproses'
+               )
+           )) AS total_ditemukan
     FROM barang
-"));
+")) ?: ["total_barang" => 0, "total_ditemukan" => 0];
 
 $totalDilaporkan = (int)($stats["total_barang"] ?? 0);
 $totalDitemukan = (int)($stats["total_ditemukan"] ?? 0);
@@ -19,6 +27,17 @@ $tingkatKeberhasilan = $totalDilaporkan
     ? round(($totalDitemukan / $totalDilaporkan) * 100)
     : 0;
 
+$admin = mysqli_fetch_assoc(mysqli_query($koneksi, "
+    SELECT no_telepon
+    FROM users
+    WHERE role = 'admin' AND no_telepon <> ''
+    ORDER BY id ASC
+    LIMIT 1
+"));
+$adminWhatsApp = preg_replace('/\D+/', '', $admin["no_telepon"] ?? "");
+if (substr($adminWhatsApp, 0, 1) === "0") {
+    $adminWhatsApp = "62" . substr($adminWhatsApp, 1);
+}
 
 $categories = mysqli_query($koneksi,
     "SELECT nama_kategori FROM kategori ORDER BY nama_kategori"
@@ -27,11 +46,19 @@ $categories = mysqli_query($koneksi,
 
 $sql = "SELECT b.id, b.nama_barang, b.foto, b.deskripsi,
         b.lokasi_kejadian, b.tanggal_kejadian, b.status_barang,
-        k.nama_kategori, u.nama pemilik, u.kelas, u.no_telepon
+        k.nama_kategori
         FROM barang b
         LEFT JOIN kategori k ON k.id=b.kategori_id
-        LEFT JOIN users u ON u.id=b.pemilik_id
-        WHERE 1=1";
+        WHERE b.status_barang = 'Ditemukan'
+          AND (
+              NOT EXISTS (SELECT 1 FROM laporan l WHERE l.barang_id = b.id)
+              OR EXISTS (
+                  SELECT 1 FROM laporan l
+                  WHERE l.barang_id = b.id
+                    AND l.jenis_laporan = 'Temuan'
+                    AND l.status = 'Diproses'
+              )
+          )";
 
 $params = [];
 $types = "";
@@ -78,9 +105,7 @@ while ($row = mysqli_fetch_assoc($result)) {
         "deskripsi" => $row["deskripsi"],
         "lokasi" => $row["lokasi_kejadian"],
         "tanggal" => date("d F Y", strtotime($row["tanggal_kejadian"])),
-        "pemilik" => trim($row["pemilik"] . 
-            (!empty($row["kelas"]) ? " - " . $row["kelas"] : "")),
-        "no_telepon" => $row["no_telepon"] ?? "",
+        "pemilik" => "Diverifikasi Admin",
         "status" => $row["status_barang"] === "Hilang"
             ? "Belum Ditemukan"
             : "Ditemukan",
@@ -124,10 +149,10 @@ while ($row = mysqli_fetch_assoc($result)) {
         </nav>
 
         <div class="nav-buttons">
-            <a href="<?= $isLoggedIn ? 'barang_crud.php?jenis=Hilang' : 'login.php' ?>"
+            <a href="<?= $isLoggedIn ? 'lapor_hilang.php' : 'login.php' ?>"
                class="btn btn-outline">Lapor Hilang</a>
 
-            <a href="<?= $isLoggedIn ? 'barang_crud.php?jenis=Temuan' : 'login.php' ?>"
+            <a href="<?= $isLoggedIn ? 'lapor_temuan.php' : 'login.php' ?>"
                class="btn btn-orange">Lapor Temuan</a>
         </div>
 
@@ -209,12 +234,8 @@ while ($row = mysqli_fetch_assoc($result)) {
                     Semua
                 </button>
 
-                <button type="button" class="filter-btn" data-status="hilang">
-                    Hilang
-                </button>
-
                 <button type="button" class="filter-btn" data-status="ditemukan">
-                    Ditemukan
+                    Barang Dipublikasikan
                 </button>
             </div>
         </div>
@@ -281,7 +302,7 @@ while ($row = mysqli_fetch_assoc($result)) {
 
                         <div class="barang-footer">
                             <span class="owner">
-                                <?= htmlspecialchars($item["pemilik"] ?: "Pelapor") ?>
+                                <?= htmlspecialchars($item["pemilik"]) ?>
                             </span>
 
                             <div class="card-buttons">
@@ -292,25 +313,11 @@ while ($row = mysqli_fetch_assoc($result)) {
                                     Detail
                                 </a>
 
-                                <?php if (!empty($item["no_telepon"])): ?>
-                                    <?php
-                                    $nomorWA = preg_replace('/\D+/', '', $item["no_telepon"]);
-
-                                    if (substr($nomorWA, 0, 1) === "0") {
-                                        $nomorWA = "62" . substr($nomorWA, 1);
-                                    }
-
-                                    $pesan = urlencode(
-                                        "Halo, saya menghubungi melalui LostFound.sch.\n\n" .
-                                        "Saya melihat laporan mengenai barang \"" . $item["nama"] .
-                                        "\". Saya ingin menanyakan terkait barang tersebut dan memastikan apakah barang tersebut masih diperlukan.\n\n" .
-                                        "Mohon informasinya. Terima kasih."
-                                    );
-                                    ?>
-
+                                <?php if ($adminWhatsApp !== ""): ?>
+                                    <?php $pesan = urlencode("Halo admin LostFound.sch, saya ingin mengonfirmasi kepemilikan barang \"" . $item["nama"] . "\" yang dipublikasikan di website."); ?>
                                     <a
-                                        href="https://wa.me/<?= $nomorWA ?>?text=<?= $pesan ?>"
-                                        target="_blank"
+                                        href="https://wa.me/<?= htmlspecialchars($adminWhatsApp) ?>?text=<?= $pesan ?>"
+                                        target="_blank" rel="noopener"
                                         class="contact-btn"
                                     >
                                         <i class="fa-brands fa-whatsapp"></i>
@@ -318,7 +325,7 @@ while ($row = mysqli_fetch_assoc($result)) {
                                     </a>
                                 <?php else: ?>
                                     <span class="contact-btn" style="opacity:.6; pointer-events:none;">
-                                        Tidak Tersedia
+                                        WhatsApp admin belum tersedia
                                     </span>
                                 <?php endif; ?>
                             </div>
@@ -335,18 +342,22 @@ while ($row = mysqli_fetch_assoc($result)) {
     <div class="container">
         <div class="cta-box">
       <h2>Menemukan Barang Orang Lain?</h2>
-            <p> Jika kamu menemukan barang milik orang lain di lingkungan sekolah,
-                segera laporkan melalui LostFound.sch agar dapat segera dikembalikan
-                kepada pemiliknya.</p>
+            <p>Laporkan barang temuan kepada admin. Informasi akan diperiksa terlebih dahulu dan baru ditampilkan setelah dinyatakan valid.</p>
   <div class="cta-buttons">
-                <a href="<?= $isLoggedIn ? 'barang_crud.php?jenis=Temuan' : 'login.php' ?>"
+                <a href="<?= $isLoggedIn ? 'lapor_temuan.php' : 'login.php' ?>"
                    class="btn btn-orange">
                     Laporkan Barang Temuan
                 </a>
-         <a href="<?= $isLoggedIn ? 'barang_crud.php?jenis=Hilang' : 'login.php' ?>"
+         <a href="<?= $isLoggedIn ? 'lapor_hilang.php' : 'login.php' ?>"
                    class="btn btn-white">
                     Laporkan Barang Hilang
                 </a>
+                <?php if ($adminWhatsApp !== ""): ?>
+                    <a href="https://wa.me/<?= htmlspecialchars($adminWhatsApp) ?>?text=<?= urlencode('Halo admin LostFound.sch, saya membutuhkan bantuan terkait barang hilang atau temuan.') ?>"
+                       class="btn btn-white" target="_blank" rel="noopener">
+                        Hubungi Admin via WhatsApp
+                    </a>
+                <?php endif; ?>
             </div>
         </div>
     </div>
