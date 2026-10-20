@@ -18,16 +18,13 @@ $sql = "SELECT users.*, login.username, login.last_login, login.status
 $stmt = mysqli_prepare($koneksi, $sql);
 mysqli_stmt_bind_param($stmt, "i", $id);
 mysqli_stmt_execute($stmt);
-
 $result = mysqli_stmt_get_result($stmt);
 $user = mysqli_fetch_assoc($result);
-
-if (!$user) {
+  if (!$user) {
     die("Data pengguna tidak ditemukan.");
 }
 
 $foto = "";
-
 if (!empty($user["foto_profil"])) {
     $file = "img/profil/" . $user["foto_profil"];
 
@@ -36,7 +33,6 @@ if (!empty($user["foto_profil"])) {
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="id">
 
@@ -45,10 +41,8 @@ if (!empty($user["foto_profil"])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Profil User - LostFound.sch</title>
-
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/profil.css">
-
     <link
         rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
@@ -76,16 +70,11 @@ if (!empty($user["foto_profil"])) {
 
         <div>
             <h1>Profil User</h1>
-       
-        </div>
-
     </div>
-
 </div>
-
-            <div class="profile-divider"></div>
+</div>
+<div class="profile-divider"></div>
             <div class="profile-grid">
-
                 <div class="info-box">
                     <label>Username</label>
                     <strong>
