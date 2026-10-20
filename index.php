@@ -395,4 +395,3 @@ while ($row = mysqli_fetch_assoc($result)) {
 <script src="js/script.js"></script>
 </body>
 </html>
-tes 
