@@ -3,6 +3,23 @@ session_start();
 require_once __DIR__ . "/koneksi.php";
 
 $isLoggedIn = !empty($_SESSION["login"]);
+$fotoProfil = "";
+
+if ($isLoggedIn && !empty($_SESSION["user_id"])) {
+    $stmtFoto = mysqli_prepare($koneksi, "SELECT foto_profil FROM users WHERE id = ? LIMIT 1");
+    $userId = (int) $_SESSION["user_id"];
+    mysqli_stmt_bind_param($stmtFoto, "i", $userId);
+    mysqli_stmt_execute($stmtFoto);
+    $dataFoto = mysqli_fetch_assoc(mysqli_stmt_get_result($stmtFoto));
+    mysqli_stmt_close($stmtFoto);
+
+    if (!empty($dataFoto["foto_profil"])) {
+        $pathFoto = "img/profil/" . basename($dataFoto["foto_profil"]);
+        if (is_file(__DIR__ . "/" . $pathFoto)) {
+            $fotoProfil = $pathFoto;
+        }
+    }
+}
 
 $search = trim($_GET["search"] ?? "");
 $category = trim($_GET["category"] ?? "");
@@ -137,23 +154,31 @@ while ($row = mysqli_fetch_assoc($result)) {
             <div class="logo-text">LostFound<span>.sch</span></div>
         </a>
 
-        <nav class="nav-menu">
-            <a href="#daftar-barang">Daftar Barang</a>
-            <a href="#kontak">Kontak</a>
+        <div class="navbar-actions">
+            <nav class="nav-menu" aria-label="Navigasi utama">
+                <a href="#daftar-barang">Daftar Barang</a>
+                <a href="#kontak">Kontak</a>
+            </nav>
 
-            <?php if ($isLoggedIn): ?>
-                <a href="profil_user.php">Profil User</a>
-            <?php else: ?>
-                <a href="login.php">Login</a>
-            <?php endif; ?>
-        </nav>
+            <div class="nav-buttons">
+                <a href="<?= $isLoggedIn ? 'lapor_hilang.php' : 'login.php' ?>"
+                   class="btn btn-outline">Lapor Hilang</a>
 
-        <div class="nav-buttons">
-            <a href="<?= $isLoggedIn ? 'lapor_hilang.php' : 'login.php' ?>"
-               class="btn btn-outline">Lapor Hilang</a>
+                <a href="<?= $isLoggedIn ? 'lapor_temuan.php' : 'login.php' ?>"
+                   class="btn btn-orange">Lapor Temuan</a>
 
-            <a href="<?= $isLoggedIn ? 'lapor_temuan.php' : 'login.php' ?>"
-               class="btn btn-orange">Lapor Temuan</a>
+                <?php if ($isLoggedIn): ?>
+                    <a href="profil_user.php" class="nav-profile" aria-label="Buka profil pengguna" title="Profil pengguna">
+                        <?php if ($fotoProfil): ?>
+                            <img src="<?= htmlspecialchars($fotoProfil, ENT_QUOTES, 'UTF-8') ?>" alt="Foto profil">
+                        <?php else: ?>
+                            <i class="fa-solid fa-user" aria-hidden="true"></i>
+                        <?php endif; ?>
+                    </a>
+                <?php else: ?>
+                    <a href="login.php" class="nav-login">Login</a>
+                <?php endif; ?>
+            </div>
         </div>
 
     </div>
