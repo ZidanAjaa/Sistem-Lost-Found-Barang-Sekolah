@@ -4,6 +4,7 @@ $host = "localhost";
 $user = "root";
 $password = "";
 $database = "lost_found";
+define("ADMIN_PHONE", "081331841410");
 
 $koneksi = mysqli_connect(
     $host,

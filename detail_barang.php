@@ -22,14 +22,27 @@ $sql = "
     FROM barang b
     LEFT JOIN kategori k ON k.id = b.kategori_id
     WHERE b.id = ?
-      AND b.status_barang = 'Ditemukan'
       AND (
-          NOT EXISTS (SELECT 1 FROM laporan l WHERE l.barang_id = b.id)
-          OR EXISTS (
-              SELECT 1 FROM laporan l
-              WHERE l.barang_id = b.id
-                AND l.jenis_laporan = 'Temuan'
-                AND l.status = 'Diproses'
+          (
+              b.status_barang = 'Ditemukan'
+              AND (
+                  NOT EXISTS (SELECT 1 FROM laporan l WHERE l.barang_id = b.id)
+                  OR EXISTS (
+                      SELECT 1 FROM laporan l
+                      WHERE l.barang_id = b.id
+                        AND l.jenis_laporan = 'Temuan'
+                        AND l.status = 'Diproses'
+                  )
+              )
+          )
+          OR (
+              b.status_barang = 'Hilang'
+              AND EXISTS (
+                  SELECT 1 FROM laporan l
+                  WHERE l.barang_id = b.id
+                    AND l.jenis_laporan = 'Hilang'
+                    AND l.status = 'Diproses'
+              )
           )
       )
     LIMIT 1
@@ -50,14 +63,7 @@ $foto = !empty($item['foto']) && file_exists(__DIR__ . '/' . $item['foto'])
     ? $item['foto']
     : 'https://placehold.co/900x600/f3f4f6/374151?text=Foto+Barang';
 
-$admin = mysqli_fetch_assoc(mysqli_query($koneksi, "
-    SELECT no_telepon
-    FROM users
-    WHERE role = 'admin' AND no_telepon <> ''
-    ORDER BY id ASC
-    LIMIT 1
-"));
-$wa = preg_replace('/\D+/', '', $admin['no_telepon'] ?? '');
+$wa = preg_replace('/\D+/', '', ADMIN_PHONE);
 if (substr($wa, 0, 1) === '0') {
     $wa = '62' . substr($wa, 1);
 }

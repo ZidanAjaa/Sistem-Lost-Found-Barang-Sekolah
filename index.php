@@ -2,7 +2,7 @@
 session_start();
 require_once __DIR__ . "/koneksi.php";
 
-$isLoggedIn = !empty($_SESSION["login"]);
+$isLoggedIn = !empty($_SESSION["user_id"]);
 $fotoProfil = "";
 
 if ($isLoggedIn && !empty($_SESSION["user_id"])) {
@@ -44,14 +44,7 @@ $tingkatKeberhasilan = $totalDilaporkan
     ? round(($totalDitemukan / $totalDilaporkan) * 100)
     : 0;
 
-$admin = mysqli_fetch_assoc(mysqli_query($koneksi, "
-    SELECT no_telepon
-    FROM users
-    WHERE role = 'admin' AND no_telepon <> ''
-    ORDER BY id ASC
-    LIMIT 1
-"));
-$adminWhatsApp = preg_replace('/\D+/', '', $admin["no_telepon"] ?? "");
+$adminWhatsApp = preg_replace('/\D+/', '', ADMIN_PHONE);
 if (substr($adminWhatsApp, 0, 1) === "0") {
     $adminWhatsApp = "62" . substr($adminWhatsApp, 1);
 }
@@ -66,14 +59,27 @@ $sql = "SELECT b.id, b.nama_barang, b.foto, b.deskripsi,
         k.nama_kategori
         FROM barang b
         LEFT JOIN kategori k ON k.id=b.kategori_id
-        WHERE b.status_barang = 'Ditemukan'
-          AND (
-              NOT EXISTS (SELECT 1 FROM laporan l WHERE l.barang_id = b.id)
-              OR EXISTS (
-                  SELECT 1 FROM laporan l
-                  WHERE l.barang_id = b.id
-                    AND l.jenis_laporan = 'Temuan'
-                    AND l.status = 'Diproses'
+        WHERE (
+              (
+                  b.status_barang = 'Ditemukan'
+                  AND (
+                      NOT EXISTS (SELECT 1 FROM laporan l WHERE l.barang_id = b.id)
+                      OR EXISTS (
+                          SELECT 1 FROM laporan l
+                          WHERE l.barang_id = b.id
+                            AND l.jenis_laporan = 'Temuan'
+                            AND l.status = 'Diproses'
+                      )
+                  )
+              )
+              OR (
+                  b.status_barang = 'Hilang'
+                  AND EXISTS (
+                      SELECT 1 FROM laporan l
+                      WHERE l.barang_id = b.id
+                        AND l.jenis_laporan = 'Hilang'
+                        AND l.status = 'Diproses'
+                  )
               )
           )";
 
@@ -150,7 +156,13 @@ while ($row = mysqli_fetch_assoc($result)) {
 <header class="navbar">
     <div class="container navbar-inner">
 
-        <a href="index.php" class="logo">
+        <a href="<?= $isLoggedIn ? 'dashboard.php' : 'index.php' ?>"
+           class="logo"
+           aria-label="<?= $isLoggedIn ? 'Buka dashboard' : 'Kembali ke beranda' ?>"
+           title="<?= $isLoggedIn ? 'Dashboard' : 'Beranda' ?>">
+            <?php if ($isLoggedIn): ?>
+                <span class="logo-home" aria-hidden="true"><i class="fa-solid fa-house"></i></span>
+            <?php endif; ?>
             <div class="logo-text">LostFound<span>.sch</span></div>
         </a>
 
@@ -260,7 +272,11 @@ while ($row = mysqli_fetch_assoc($result)) {
                 </button>
 
                 <button type="button" class="filter-btn" data-status="ditemukan">
-                    Barang Dipublikasikan
+                    Barang Ditemukan
+                </button>
+
+                <button type="button" class="filter-btn" data-status="hilang">
+                    Barang Hilang
                 </button>
             </div>
         </div>

@@ -24,12 +24,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit('Permintaan tidak diizinkan.');
     }
 
+    $returnTo = ($_POST['return_to'] ?? '') === 'laporan_masuk_admin.php'
+        ? 'laporan_masuk_admin.php'
+        : 'dashboard.php#laporan-masuk';
     $laporanId = (int) ($_POST['laporan_id'] ?? 0);
     $statusBaru = $_POST['status'] ?? '';
 
     if ($laporanId <= 0 || !in_array($statusBaru, ['Diproses', 'Selesai'], true)) {
         $_SESSION['dashboard_notice'] = 'Permintaan perubahan status tidak valid.';
-        header('Location: dashboard.php#laporan-masuk');
+        header('Location: ' . $returnTo);
         exit;
     }
 
@@ -44,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$bolehDiproses && !$bolehDiselesaikan) {
         $_SESSION['dashboard_notice'] = 'Laporan tidak ditemukan atau statusnya tidak dapat diubah.';
-        header('Location: dashboard.php#laporan-masuk');
+        header('Location: ' . $returnTo);
         exit;
     }
 
@@ -74,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         throw $e;
     }
 
-    header('Location: dashboard.php#laporan-masuk');
+    header('Location: ' . $returnTo);
     exit;
 }
 
@@ -557,7 +560,7 @@ $my_reports = mysqli_stmt_get_result($my_reports_stmt);
                             <div class="panel">
                                 <h2>Tindakan Cepat</h2>
                                 <div class="btn-row vertical">
-                                    <a href="#laporan-masuk" class="btn btn-primary">Verifikasi Laporan Masuk</a>
+                                    <a href="laporan_masuk_admin.php" class="btn btn-primary">Verifikasi Laporan Masuk</a>
                                     <a href="laporan_barang_admin.php" class="btn btn-secondary">Lihat Data Barang</a>
                                     <a href="index.php#daftar-barang" class="btn btn-secondary">Lihat Barang Dipublikasikan</a>
                                 </div>
@@ -652,6 +655,7 @@ $my_reports = mysqli_stmt_get_result($my_reports_stmt);
                                 <p class="eyebrow">Reports</p>
                                 <h2>Verifikasi Laporan Masuk</h2>
                             </div>
+                            <a href="laporan_masuk_admin.php" class="btn btn-primary">Buka Halaman Verifikasi</a>
                         </div>
 
                         <div class="panel">
@@ -678,7 +682,7 @@ $my_reports = mysqli_stmt_get_result($my_reports_stmt);
                                                     ? 'Menunggu Verifikasi'
                                                     : ($report['status'] === 'Selesai'
                                                         ? 'Sudah Diambil / Selesai'
-                                                        : ($report['jenis_laporan'] === 'Temuan' ? 'Dipublikasikan' : 'Dalam Tindak Lanjut'));
+                                                        : ($report['jenis_laporan'] === 'Temuan' ? 'Dipublikasikan' : 'Dipublikasikan & Dalam Tindak Lanjut'));
                                                 $statusClass = $report['status'] === 'Pending'
                                                     ? 'pill-pending'
                                                     : ($report['status'] === 'Selesai' ? 'pill-done' : 'pill-progress');
@@ -708,12 +712,13 @@ $my_reports = mysqli_stmt_get_result($my_reports_stmt);
                                                     <td>
                                                         <?php if ($report['status'] === 'Pending' || $report['status'] === 'Diproses'): ?>
                                                             <div class="report-actions">
+                                                                <a class="table-link" href="detail_laporan_admin.php?id=<?= (int) $report['id'] ?>">Lihat Detail</a>
                                                                 <form method="POST" action="dashboard.php#laporan-masuk">
                                                                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                                                     <input type="hidden" name="laporan_id" value="<?= (int) $report['id'] ?>">
                                                                     <?php if ($report['status'] === 'Pending'): ?>
                                                                         <input type="hidden" name="status" value="Diproses">
-                                                                        <button type="submit"><?= $report['jenis_laporan'] === 'Temuan' ? 'Verifikasi & Publikasikan' : 'Mulai Tindak Lanjut' ?></button>
+                                                                        <button type="submit">Verifikasi & Publikasikan</button>
                                                                     <?php else: ?>
                                                                         <input type="hidden" name="status" value="Selesai">
                                                                         <button class="complete" type="submit"><?= $report['jenis_laporan'] === 'Temuan' ? 'Tandai Sudah Diambil' : 'Tandai Selesai' ?></button>
@@ -721,7 +726,7 @@ $my_reports = mysqli_stmt_get_result($my_reports_stmt);
                                                                 </form>
                                                             </div>
                                                         <?php else: ?>
-                                                            <span class="muted">Tidak ada tindakan</span>
+                                                            <a class="table-link" href="detail_laporan_admin.php?id=<?= (int) $report['id'] ?>">Lihat Detail</a>
                                                         <?php endif; ?>
                                                     </td>
                                                 </tr>

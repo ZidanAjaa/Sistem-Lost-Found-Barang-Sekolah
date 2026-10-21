@@ -112,6 +112,26 @@ input {
     font-weight: 800;
 }
 
+.logo-home {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 36px;
+    border-radius: 10px;
+    background: #eff6ff;
+    color: #2563eb;
+    font-size: 17px;
+    transition: 0.2s;
+}
+
+.logo:hover .logo-home {
+    background: #dbeafe;
+    color: #1d4ed8;
+    transform: translateY(-2px);
+}
+
 .logo-icon {
     width: 40px;
     height: 40px;
