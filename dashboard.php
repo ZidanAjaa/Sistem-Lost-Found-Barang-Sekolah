@@ -83,18 +83,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $stats = mysqli_fetch_assoc(mysqli_query($koneksi, "
     SELECT
-        SUM(CASE WHEN status_barang = 'Hilang' THEN 1 ELSE 0 END) AS total_hilang,
-        SUM(CASE WHEN status_barang = 'Ditemukan' THEN 1 ELSE 0 END) AS total_ditemukan,
-        COUNT(*) AS total_barang
-    FROM barang
+        COUNT(*) AS total_laporan,
+        SUM(jenis_laporan = 'Hilang') AS total_hilang,
+        SUM(jenis_laporan = 'Temuan') AS total_ditemukan,
+        SUM(status = 'Pending') AS menunggu
+    FROM laporan
 ")) ?: [
+    'total_laporan' => 0,
     'total_hilang' => 0,
     'total_ditemukan' => 0,
-    'total_barang' => 0,
+    'menunggu' => 0,
 ];
-
-$total_user = (int) (mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM users"))['total'] ?? 0);
-$total_admin = (int) (mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM users WHERE role = 'admin'"))['total'] ?? 0);
 
 $recent_users = mysqli_query($koneksi, "
     SELECT u.id, u.nama, u.kelas, u.role, l.username
@@ -105,11 +104,21 @@ $recent_users = mysqli_query($koneksi, "
 ");
 
 $recent_barang = mysqli_query($koneksi, "
-    SELECT b.id, b.nama_barang, b.status_barang, b.lokasi_kejadian, b.tanggal_kejadian, u.nama AS pemilik
+    SELECT b.id, b.nama_barang, b.status_barang, b.lokasi_kejadian, b.tanggal_kejadian,
+           u.nama AS pemilik, k.nama_kategori
     FROM barang b
     JOIN users u ON u.id = b.pemilik_id
+    LEFT JOIN kategori k ON k.id = b.kategori_id
     ORDER BY b.created_at DESC
     LIMIT 6
+");
+
+$recent_categories = mysqli_query($koneksi, "
+    SELECT k.id, k.nama_kategori, COUNT(b.id) AS total_barang
+    FROM kategori k
+    LEFT JOIN barang b ON b.kategori_id = k.id
+    GROUP BY k.id, k.nama_kategori
+    ORDER BY k.nama_kategori
 ");
 
 $recent_reports = mysqli_query($koneksi, "
@@ -123,15 +132,43 @@ $recent_reports = mysqli_query($koneksi, "
     LIMIT 30
 ");
 
+$recent_activity = mysqli_query($koneksi, "
+    SELECT l.id, l.jenis_laporan, l.status, l.updated_at, b.nama_barang, u.nama AS pelapor
+    FROM laporan l
+    JOIN barang b ON b.id = l.barang_id
+    JOIN users u ON u.id = l.user_id
+    ORDER BY l.updated_at DESC
+    LIMIT 5
+");
+
+$recent_found_items = mysqli_query($koneksi, "
+    SELECT b.id, b.nama_barang, b.lokasi_kejadian, b.tanggal_kejadian,
+           b.created_at, k.nama_kategori
+    FROM barang b
+    LEFT JOIN kategori k ON k.id = b.kategori_id
+    WHERE b.status_barang = 'Ditemukan'
+      AND (
+          NOT EXISTS (SELECT 1 FROM laporan l WHERE l.barang_id = b.id)
+          OR EXISTS (
+              SELECT 1 FROM laporan l
+              WHERE l.barang_id = b.id
+                AND l.jenis_laporan = 'Temuan'
+                AND l.status = 'Diproses'
+          )
+      )
+    ORDER BY b.created_at DESC
+    LIMIT 5
+");
+
 $my_report_stats = mysqli_fetch_assoc(mysqli_query($koneksi, "
     SELECT
-        COUNT(*) AS total,
-        SUM(status = 'Pending') AS menunggu,
+        SUM(jenis_laporan = 'Hilang') AS total_hilang,
+        SUM(jenis_laporan = 'Temuan') AS total_ditemukan,
         SUM(status = 'Diproses') AS diproses,
         SUM(status = 'Selesai') AS selesai
     FROM laporan
     WHERE user_id = " . (int) $_SESSION['user_id']
-)) ?: ['total' => 0, 'menunggu' => 0, 'diproses' => 0, 'selesai' => 0];
+)) ?: ['total_hilang' => 0, 'total_ditemukan' => 0, 'diproses' => 0, 'selesai' => 0];
 
 $my_reports_stmt = mysqli_prepare($koneksi, "
     SELECT l.id, l.jenis_laporan, l.status, l.created_at, b.nama_barang
@@ -153,370 +190,129 @@ $my_reports = mysqli_stmt_get_result($my_reports_stmt);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Lost & Found</title>
     <link rel="stylesheet" href="css/style.css">
-    <style>
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #eef3ff 0%, #f8f9ff 100%);
-            color: #1f2430;
-        }
-        .dashboard-wrap {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 30px 20px 60px;
-        }
-        .topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-        }
-        .topbar h1 {
-            margin: 0;
-            font-size: 2rem;
-        }
-        .nav-links {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-        }
-        .nav-links a {
-            color: #2f5dd2;
-            font-weight: 700;
-            text-decoration: none;
-            padding: 8px 12px;
-            border-radius: 10px;
-            background: rgba(255,255,255,0.7);
-        }
-        .badge {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 999px;
-            background: #e8edff;
-            color: #3947ce;
-            font-weight: 700;
-            font-size: 12px;
-            text-transform: uppercase;
-        }
-        .admin-shell {
-            display: grid;
-            grid-template-columns: 260px 1fr;
-            gap: 24px;
-            align-items: start;
-        }
-        .sidebar {
-            background: #121a3b;
-            color: #fff;
-            border-radius: 22px;
-            padding: 20px 16px;
-            position: sticky;
-            top: 20px;
-            min-height: 700px;
-        }
-        .brand-box {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 8px 18px;
-            border-bottom: 1px solid rgba(255,255,255,0.12);
-            margin-bottom: 18px;
-        }
-        .brand-icon {
-            width: 42px;
-            height: 42px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #5d6bff, #7ec8ff);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-        }
-        .brand-box h3 {
-            margin: 0;
-            font-size: 1.1rem;
-        }
-        .brand-box small {
-            color: rgba(255,255,255,0.7);
-        }
-        .sidebar-nav {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .sidebar-nav a {
-            color: #edf3ff;
-            text-decoration: none;
-            padding: 12px 14px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: 600;
-        }
-        .sidebar-nav a.active,
-        .sidebar-nav a:hover {
-            background: rgba(255,255,255,0.08);
-        }
-        .sidebar-footer {
-            margin-top: 30px;
-            padding: 16px 12px 8px;
-            border-top: 1px solid rgba(255,255,255,0.12);
-            color: rgba(255,255,255,0.8);
-        }
-        .sidebar-footer strong {
-            display: block;
-            margin: 5px 0 10px;
-            color: #fff;
-        }
-        .sidebar-footer a {
-            color: #9ad2ff;
-            text-decoration: none;
-        }
-        .admin-main {
-            display: flex;
-            flex-direction: column;
-            gap: 22px;
-        }
-        .section-block {
-            scroll-margin-top: 20px;
-        }
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 14px;
-            flex-wrap: wrap;
-        }
-        .eyebrow {
-            margin: 0 0 4px;
-            font-size: 0.75rem;
-            color: #6b7280;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            font-weight: 700;
-        }
-        .section-header h2 {
-            margin: 0;
-            font-size: 1.6rem;
-        }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 18px;
-            margin-bottom: 0;
-        }
-        .stat-card, .panel {
-            background: #fff;
-            border-radius: 18px;
-            padding: 22px;
-            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
-        }
-        .stat-card h3 {
-            margin: 0 0 10px;
-            color: #667085;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .stat-card .value {
-            font-size: 2rem;
-            font-weight: 800;
-            margin: 0;
-        }
-        .stat-card .note {
-            margin-top: 8px;
-            color: #475467;
-            font-size: 0.9rem;
-        }
-        .panel-grid {
-            display: grid;
-            grid-template-columns: 1.1fr 1.1fr;
-            gap: 26px;
-            margin-top: 22px;
-        }
-        .panel h2 {
-            margin-top: 0;
-            margin-bottom: 18px;
-            font-size: 1.3rem;
-        }
-        .btn-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-top: 18px;
-        }
-        .btn {
-            display: inline-block;
-            padding: 12px 18px;
-            border-radius: 10px;
-            font-weight: 700;
-            text-decoration: none;
-            border: none;
-            cursor: pointer;
-        }
-        .btn-primary { background: #3f2de0; color: #fff; }
-        .btn-secondary { background: #eef2ff; color: #2c2f5d; }
-        .btn-outline { background: #fff; border: 1px solid #dfe3ef; color: #374151; }
-        .btn-row.vertical {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-        .table-link {
-            color: #2f5dd2;
-            font-weight: 700;
-            text-decoration: none;
-        }
-        .mini-list, .table-list {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-        }
-        .mini-list li {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #edf0f7;
-        }
-        .mini-list li:last-child {
-            border-bottom: none;
-        }
-        .pill {
-            display: inline-block;
-            padding: 5px 9px;
-            border-radius: 999px;
-            font-size: 12px;
-            font-weight: 700;
-        }
-        .pill-hilang { background: #fff0df; color: #b76d00; }
-        .pill-ditemukan { background: #ebf9f1; color: #1e7d4f; }
-        .table-list th, .table-list td {
-            padding: 12px 10px;
-            border-bottom: 1px solid #edf0f7;
-            text-align: left;
-            vertical-align: top;
-        }
-        .table-list th {
-            color: #475467;
-            background: #f8faff;
-        }
-        .report-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        .report-actions form { margin: 0; }
-        .report-actions button {
-            border: 0;
-            border-radius: 8px;
-            padding: 8px 10px;
-            font-weight: 700;
-            cursor: pointer;
-            color: #fff;
-            background: #3f2de0;
-        }
-        .report-actions button.complete { background: #16804a; }
-        .pill-pending { background: #fff4d6; color: #986400; }
-        .pill-progress { background: #e8edff; color: #3947ce; }
-        .pill-done { background: #ebf9f1; color: #1e7d4f; }
-        .notice {
-            padding: 14px 18px;
-            border-radius: 12px;
-            background: #ebf9f1;
-            color: #17633f;
-            font-weight: 700;
-        }
-        .table-wrap { overflow-x: auto; }
-        .workflow-note {
-            margin: 0 0 16px;
-            line-height: 1.6;
-        }
-        .muted { color: #667085; }
-        @media (max-width: 900px) {
-            .admin-shell { grid-template-columns: 1fr; }
-            .sidebar { position: static; min-height: auto; }
-            .panel-grid { grid-template-columns: 1fr; }
-        }
-    </style>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 <body>
     <div class="dashboard-wrap">
         <div class="topbar">
-            <div>
-                <h1>Halo, <?= htmlspecialchars($nama) ?> <span class="badge"><?= htmlspecialchars($role) ?></span></h1>
+            <?php if ($role === 'admin' || $role === 'user'): ?>
+                <button type="button" class="sidebar-toggle" aria-label="Buka atau tutup navigasi" aria-controls="dashboard-sidebar" aria-expanded="false">
+                    <i class="fa-solid fa-bars" aria-hidden="true"></i>
+                </button>
+            <?php endif; ?>
+            <label class="dashboard-search">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <input type="search" id="dashboard-search" placeholder="Cari di dashboard..." autocomplete="off">
+            </label>
+            <div class="topbar-actions">
+                <a class="notification-link" href="<?= $role === 'admin' ? '#aktivitas-terbaru' : '#riwayat-laporan' ?>" aria-label="Lihat laporan terbaru" title="Laporan terbaru">
+                    <i class="fa-regular fa-bell" aria-hidden="true"></i>
+                </a>
+                <a class="profile-link" href="profil_user.php">
+                    <span class="profile-avatar" aria-hidden="true"><?= htmlspecialchars(strtoupper(substr($nama, 0, 1))) ?></span>
+                    <span class="profile-name"><?= htmlspecialchars($nama) ?></span>
+                    <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                </a>
             </div>
-            <nav class="nav-links">
-                <a href="index.php">Beranda</a>
-                <a href="profil_user.php">Profil</a>
-                <a href="logout.php">Logout</a>
-            </nav>
         </div>
 
         <?php if ($dashboardNotice !== ''): ?>
-            <div class="notice" style="margin-bottom:22px;"><?= htmlspecialchars($dashboardNotice) ?></div>
+            <div class="notice dashboard-notice"><?= htmlspecialchars($dashboardNotice) ?></div>
         <?php endif; ?>
 
-        <?php if ($role === 'admin'): ?>
-            <div class="admin-shell">
-                <aside class="sidebar">
+        <div class="dashboard-shell sidebar-collapsed <?= $role === 'admin' ? 'dashboard-shell-admin' : 'dashboard-shell-user' ?>">
+                <aside class="sidebar" id="dashboard-sidebar">
                     <div class="brand-box">
                         <div class="brand-icon">LF</div>
                         <div>
                             <h3>LostFound</h3>
-                            <small>Admin Panel</small>
+                            <small><?= $role === 'admin' ? 'Admin Panel' : 'User Panel' ?></small>
                         </div>
                     </div>
 
-                    <nav class="sidebar-nav">
-                        <a href="#analisa-data" class="active"><span></span> Analisa Data Barang</a>
-                        <a href="#informasi-user"><span></span> Informasi Akun User</a>
-                        <a href="#kelola-barang"><span></span> Kelola Data Barang</a>
-                        <a href="#laporan-masuk"><span></span> Laporan Masuk</a>
-                        <a href="#pengaturan"><span></span> Pengaturan</a>
+                    <nav class="sidebar-nav" aria-label="Navigasi utama">
+                        <?php if ($role === 'admin'): ?>
+                            <div class="nav-group">
+                                <p class="nav-group-label">Main Menu</p>
+                                <a href="#analisa-data" class="active" title="Dashboard"><i class="fa-solid fa-house" aria-hidden="true"></i><span>Dashboard</span></a>
+                                <a href="laporan_masuk_admin.php" title="Semua Laporan"><i class="fa-solid fa-clipboard-list" aria-hidden="true"></i><span>Semua Laporan</span></a>
+                                <a href="laporan_barang_admin.php" title="Data Barang"><i class="fa-solid fa-box" aria-hidden="true"></i><span>Data Barang</span></a>
+                                <a href="#kategori-barang" title="Kategori Barang"><i class="fa-solid fa-tags" aria-hidden="true"></i><span>Kategori Barang</span></a>
+                            </div>
+                            <div class="nav-group">
+                                <p class="nav-group-label">Management</p>
+                                <a href="#informasi-user" title="Data Pengguna"><i class="fa-solid fa-users" aria-hidden="true"></i><span>Data Pengguna</span></a>
+                                <a href="#aktivitas-terbaru" title="Notifikasi"><i class="fa-regular fa-bell" aria-hidden="true"></i><span>Notifikasi</span></a>
+                                <a href="#laporan-masuk" title="Laporan &amp; Statistik"><i class="fa-solid fa-chart-column" aria-hidden="true"></i><span>Laporan &amp; Statistik</span></a>
+                            </div>
+                            <div class="nav-group">
+                                <p class="nav-group-label">Account</p>
+                                <a href="profil_user.php" title="Profil Admin"><i class="fa-regular fa-user" aria-hidden="true"></i><span>Profil Admin</span></a>
+                                <a href="#pengaturan" title="Pengaturan"><i class="fa-solid fa-gear" aria-hidden="true"></i><span>Pengaturan</span></a>
+                                <a href="logout.php" title="Logout"><i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i><span>Logout</span></a>
+                            </div>
+                        <?php else: ?>
+                            <div class="nav-group">
+                                <p class="nav-group-label">Main Menu</p>
+                                <a href="#dashboard-home" class="active" title="Dashboard"><i class="fa-solid fa-house" aria-hidden="true"></i><span>Dashboard</span></a>
+                                <a href="index.php#daftar-barang" title="Cari Barang"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><span>Cari Barang</span></a>
+                                <a href="lapor_hilang.php" title="Laporkan Kehilangan"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i><span>Laporkan Kehilangan</span></a>
+                                <a href="lapor_temuan.php" title="Laporkan Penemuan"><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span>Laporkan Penemuan</span></a>
+                            </div>
+                            <div class="nav-group">
+                                <p class="nav-group-label">My Activities</p>
+                                <a href="#laporan-saya" title="Laporan Saya"><i class="fa-solid fa-folder-open" aria-hidden="true"></i><span>Laporan Saya</span></a>
+                                <a href="#riwayat-laporan" title="Notifikasi"><i class="fa-regular fa-bell" aria-hidden="true"></i><span>Notifikasi</span></a>
+                            </div>
+                            <div class="nav-group">
+                                <p class="nav-group-label">Account</p>
+                                <a href="profil_user.php" title="Profil Saya"><i class="fa-regular fa-user" aria-hidden="true"></i><span>Profil Saya</span></a>
+                                <a href="index.php#kontak" title="Bantuan"><i class="fa-regular fa-circle-question" aria-hidden="true"></i><span>Bantuan</span></a>
+                                <a href="logout.php" title="Logout"><i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i><span>Logout</span></a>
+                            </div>
+                        <?php endif; ?>
                     </nav>
 
                     <div class="sidebar-footer">
                         <small>Login sebagai</small>
                         <strong><?= htmlspecialchars($nama) ?></strong>
-                        <a href="logout.php">Logout</a>
                     </div>
                 </aside>
+                <button type="button" class="sidebar-backdrop" aria-label="Tutup navigasi"></button>
 
+        <?php if ($role === 'admin'): ?>
                 <main class="admin-main">
                     <section id="analisa-data" class="section-block">
-                        <div class="section-header">
+                        <div class="section-header dashboard-hero">
                             <div>
-                                <p class="eyebrow">Overview</p>
-                                <h2>Analisa Data Barang</h2>
+                                <p class="eyebrow">Lost &amp; Found · Admin</p>
+                                <h2>Dashboard</h2>
+                                <p class="hero-description">Pantau laporan dan aktivitas barang di lingkungan sekolah.</p>
                             </div>
-                            <a href="#laporan-masuk" class="btn btn-primary">Tinjau Laporan Masuk</a>
+                            <a href="#laporan-masuk" class="btn btn-hero">Tinjau Laporan</a>
                         </div>
 
-                        <div class="stats-grid">
+                        <div id="analytics" class="stats-grid">
                             <div class="stat-card">
-                                <h3>Total Barang</h3>
-                                <p class="value"><?= (int) ($stats['total_barang'] ?? 0) ?></p>
-                                <div class="note">Semua laporan aktif</div>
+                                <div class="stat-card-heading"><h3>Total Laporan</h3><span class="stat-icon"><i class="fa-solid fa-clipboard-list" aria-hidden="true"></i></span></div>
+                                <p class="value"><?= (int) ($stats['total_laporan'] ?? 0) ?></p>
+                                <div class="note">Semua laporan masuk</div>
                             </div>
                             <div class="stat-card">
-                                <h3>Barang Hilang</h3>
+                                <div class="stat-card-heading"><h3>Laporan Kehilangan</h3><span class="stat-icon"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></span></div>
                                 <p class="value"><?= (int) ($stats['total_hilang'] ?? 0) ?></p>
-                                <div class="note">Perlu tindak lanjut</div>
+                                <div class="note">Laporan barang hilang</div>
                             </div>
                             <div class="stat-card">
-                                <h3>Barang Ditemukan</h3>
+                                <div class="stat-card-heading"><h3>Laporan Penemuan</h3><span class="stat-icon"><i class="fa-solid fa-circle-check" aria-hidden="true"></i></span></div>
                                 <p class="value"><?= (int) ($stats['total_ditemukan'] ?? 0) ?></p>
-                                <div class="note">Siap diproses</div>
+                                <div class="note">Laporan barang temuan</div>
                             </div>
                             <div class="stat-card">
-                                <h3>Pengguna</h3>
-                                <p class="value"><?= $total_user ?></p>
-                                <div class="note"><?= $total_admin ?> admin</div>
+                                <div class="stat-card-heading"><h3>Menunggu Konfirmasi</h3><span class="stat-icon"><i class="fa-regular fa-clock" aria-hidden="true"></i></span></div>
+                                <p class="value"><?= (int) ($stats['menunggu'] ?? 0) ?></p>
+                                <div class="note">Belum diverifikasi</div>
                             </div>
                         </div>
 
@@ -536,8 +332,8 @@ $my_reports = mysqli_stmt_get_result($my_reports_stmt);
                                         <span>Persentase Hilang</span>
                                         <span>
                                             <?php
-                                            $persenHilang = ($stats['total_barang'] > 0)
-                                                ? round(((int) ($stats['total_hilang'] ?? 0) / (int) ($stats['total_barang'] ?? 1)) * 100)
+                                            $persenHilang = ($stats['total_laporan'] > 0)
+                                                ? round(((int) ($stats['total_hilang'] ?? 0) / (int) ($stats['total_laporan'] ?? 1)) * 100)
                                                 : 0;
                                             echo $persenHilang . '%';
                                             ?>
@@ -547,8 +343,8 @@ $my_reports = mysqli_stmt_get_result($my_reports_stmt);
                                         <span>Persentase Ditemukan</span>
                                         <span>
                                             <?php
-                                            $persenDitemukan = ($stats['total_barang'] > 0)
-                                                ? round(((int) ($stats['total_ditemukan'] ?? 0) / (int) ($stats['total_barang'] ?? 1)) * 100)
+                                            $persenDitemukan = ($stats['total_laporan'] > 0)
+                                                ? round(((int) ($stats['total_ditemukan'] ?? 0) / (int) ($stats['total_laporan'] ?? 1)) * 100)
                                                 : 0;
                                             echo $persenDitemukan . '%';
                                             ?>
@@ -577,7 +373,7 @@ $my_reports = mysqli_stmt_get_result($my_reports_stmt);
                         </div>
 
                         <div class="panel">
-                            <table class="table-list" style="width:100%;">
+                            <table class="table-list dashboard-searchable" style="width:100%;">
                                 <thead>
                                     <tr>
                                         <th>Nama</th>
@@ -620,11 +416,12 @@ $my_reports = mysqli_stmt_get_result($my_reports_stmt);
                         </div>
 
                         <div class="panel">
-                            <table class="table-list" style="width:100%;">
+                            <table class="table-list dashboard-searchable" style="width:100%;">
                                 <thead>
                                     <tr>
                                         <th>Nama Barang</th>
                                         <th>Pemilik</th>
+                                        <th>Kategori</th>
                                         <th>Status</th>
                                         <th>Lokasi</th>
                                         <th>Tanggal</th>
@@ -635,6 +432,9 @@ $my_reports = mysqli_stmt_get_result($my_reports_stmt);
                                         <tr>
                                             <td><?= htmlspecialchars($barang['nama_barang']) ?></td>
                                             <td class="muted"><?= htmlspecialchars($barang['pemilik']) ?></td>
+                                            <td>
+                                                <span class="pill pill-progress"><?= htmlspecialchars($barang['nama_kategori'] ?? 'Umum') ?></span>
+                                            </td>
                                             <td>
                                                 <span class="pill <?= $barang['status_barang'] === 'Hilang' ? 'pill-hilang' : 'pill-ditemukan' ?>">
                                                     <?= htmlspecialchars($barang['status_barang']) ?>
@@ -649,11 +449,35 @@ $my_reports = mysqli_stmt_get_result($my_reports_stmt);
                         </div>
                     </section>
 
+                    <section id="kategori-barang" class="section-block">
+                        <div class="section-header">
+                            <div>
+                                <p class="eyebrow">Data Barang</p>
+                                <h2>Kategori Barang</h2>
+                            </div>
+                        </div>
+
+                        <div class="panel">
+                            <ul class="mini-list">
+                                <?php if (!$recent_categories || mysqli_num_rows($recent_categories) === 0): ?>
+                                    <li><span class="muted">Belum ada kategori barang.</span></li>
+                                <?php else: ?>
+                                    <?php while ($category = mysqli_fetch_assoc($recent_categories)): ?>
+                                        <li>
+                                            <span><?= htmlspecialchars($category['nama_kategori']) ?></span>
+                                            <span class="pill pill-progress"><?= (int) $category['total_barang'] ?> barang</span>
+                                        </li>
+                                    <?php endwhile; ?>
+                                <?php endif; ?>
+                            </ul>
+                        </div>
+                    </section>
+
                     <section id="laporan-masuk" class="section-block">
                         <div class="section-header">
                             <div>
                                 <p class="eyebrow">Reports</p>
-                                <h2>Verifikasi Laporan Masuk</h2>
+                                <h2>Laporan Terbaru</h2>
                             </div>
                             <a href="laporan_masuk_admin.php" class="btn btn-primary">Buka Halaman Verifikasi</a>
                         </div>
@@ -661,7 +485,7 @@ $my_reports = mysqli_stmt_get_result($my_reports_stmt);
                         <div class="panel">
                             <p class="muted workflow-note">Periksa informasi dan hubungi pelapor untuk konfirmasi. Barang temuan hanya tampil di halaman publik setelah admin memilih “Verifikasi &amp; Publikasikan”.</p>
                             <div class="table-wrap">
-                                <table class="table-list" style="width:100%;">
+                                <table class="table-list dashboard-searchable" style="width:100%;">
                                     <thead>
                                         <tr>
                                             <th>Barang</th>
@@ -738,6 +562,36 @@ $my_reports = mysqli_stmt_get_result($my_reports_stmt);
                         </div>
                     </section>
 
+                    <section id="aktivitas-terbaru" class="section-block">
+                        <div class="section-header">
+                            <div>
+                                <p class="eyebrow">Aktivitas Sistem</p>
+                                <h2>Aktivitas Terbaru</h2>
+                            </div>
+                        </div>
+
+                        <div class="panel">
+                            <ul class="mini-list">
+                                <?php if (!$recent_activity || mysqli_num_rows($recent_activity) === 0): ?>
+                                    <li><span class="muted">Belum ada aktivitas laporan.</span></li>
+                                <?php else: ?>
+                                    <?php while ($activity = mysqli_fetch_assoc($recent_activity)): ?>
+                                        <li>
+                                            <span>
+                                                <strong><?= htmlspecialchars($activity['nama_barang']) ?></strong>
+                                                <span class="muted"> · <?= htmlspecialchars($activity['pelapor']) ?> · <?= htmlspecialchars($activity['jenis_laporan'] === 'Temuan' ? 'Penemuan' : 'Kehilangan') ?></span>
+                                            </span>
+                                            <span>
+                                                <span class="pill <?= $activity['status'] === 'Pending' ? 'pill-pending' : ($activity['status'] === 'Selesai' ? 'pill-done' : 'pill-progress') ?>"><?= htmlspecialchars($activity['status']) ?></span>
+                                                <small class="muted"><?= htmlspecialchars(date('d-m-Y H:i', strtotime($activity['updated_at']))) ?></small>
+                                            </span>
+                                        </li>
+                                    <?php endwhile; ?>
+                                <?php endif; ?>
+                            </ul>
+                        </div>
+                    </section>
+
                     <section id="pengaturan" class="section-block">
                         <div class="section-header">
                             <div>
@@ -755,24 +609,37 @@ $my_reports = mysqli_stmt_get_result($my_reports_stmt);
                         </div>
                     </section>
                 </main>
-            </div>
 
         <?php else: ?>
-            <div class="stats-grid">
+            <main class="user-dashboard">
+            <section id="dashboard-home" class="section-header dashboard-hero">
+                <div>
+                    <p class="eyebrow">Lost &amp; Found · Pengguna</p>
+                    <h2>Dashboard</h2>
+                    <p class="hero-description">Cari barang temuan dan pantau perkembangan laporan Anda.</p>
+                </div>
+                <a href="lapor_hilang.php" class="btn btn-hero">Buat Laporan</a>
+            </section>
+            <div class="stats-grid user-stats-grid">
                 <div class="stat-card">
-                    <h3>Laporan Saya</h3>
-                    <p class="value"><?= (int) ($my_report_stats['total'] ?? 0) ?></p>
-                    <div class="note">Laporan kehilangan dan penemuan</div>
+                    <div class="stat-card-heading"><h3>Barang Hilang</h3><span class="stat-icon"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></span></div>
+                    <p class="value"><?= (int) ($my_report_stats['total_hilang'] ?? 0) ?></p>
+                    <div class="note">Laporan kehilangan Anda</div>
                 </div>
                 <div class="stat-card">
-                    <h3>Menunggu Verifikasi</h3>
-                    <p class="value"><?= (int) ($my_report_stats['menunggu'] ?? 0) ?></p>
-                    <div class="note">Sedang diperiksa admin</div>
+                    <div class="stat-card-heading"><h3>Barang Temuan</h3><span class="stat-icon"><i class="fa-solid fa-circle-check" aria-hidden="true"></i></span></div>
+                    <p class="value"><?= (int) ($my_report_stats['total_ditemukan'] ?? 0) ?></p>
+                    <div class="note">Laporan penemuan Anda</div>
                 </div>
                 <div class="stat-card">
-                    <h3>Diproses</h3>
+                    <div class="stat-card-heading"><h3>Laporan Diproses</h3><span class="stat-icon"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i></span></div>
                     <p class="value"><?= (int) ($my_report_stats['diproses'] ?? 0) ?></p>
-                    <div class="note">Publikasi atau tindak lanjut</div>
+                    <div class="note">Sedang ditinjau admin</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-heading"><h3>Laporan Selesai</h3><span class="stat-icon"><i class="fa-solid fa-circle-check" aria-hidden="true"></i></span></div>
+                    <p class="value"><?= (int) ($my_report_stats['selesai'] ?? 0) ?></p>
+                    <div class="note">Laporan telah diselesaikan</div>
                 </div>
             </div>
 
@@ -790,16 +657,15 @@ $my_reports = mysqli_stmt_get_result($my_reports_stmt);
                     </div>
                 </div>
 
-                <div class="panel">
-                    <h2>Laporkan Kehilangan atau Temuan</h2>
-                    <p class="muted workflow-note">Laporan dikirim ke admin untuk diperiksa. Barang temuan tidak langsung tampil ke publik; admin akan memverifikasi dan memublikasikannya setelah konfirmasi.</p>
+                <div class="panel" id="laporan-saya">
+                    <h2>Riwayat Laporan</h2>
+                    <p class="muted workflow-note">Lihat perkembangan laporan kehilangan dan penemuan yang Anda kirim.</p>
                     <div class="btn-row">
                         <a href="lapor_hilang.php" class="btn btn-primary">Lapor Barang Hilang</a>
                         <a href="lapor_temuan.php" class="btn btn-secondary">Lapor Barang Temuan</a>
                     </div>
-                    <h3>Laporan Terbaru Saya</h3>
                     <div class="table-wrap">
-                        <table class="table-list" style="width:100%;">
+                        <table id="riwayat-laporan" class="table-list dashboard-searchable" style="width:100%;">
                             <thead><tr><th>Barang</th><th>Jenis</th><th>Status</th><th>Tanggal</th></tr></thead>
                             <tbody>
                                 <?php if (!$my_reports || mysqli_num_rows($my_reports) === 0): ?>
@@ -831,8 +697,36 @@ $my_reports = mysqli_stmt_get_result($my_reports_stmt);
                         <a href="index.php" class="btn btn-outline">Lihat Beranda</a>
                     </div>
                 </div>
+
+                <div class="panel user-found-panel">
+                    <div class="section-header">
+                        <div>
+                            <h2>Barang Temuan Terbaru</h2>
+                            <p class="muted workflow-note">Barang temuan yang telah tersedia untuk dilihat.</p>
+                        </div>
+                        <a href="index.php#daftar-barang" class="table-link">Cari semua</a>
+                    </div>
+                    <ul class="mini-list">
+                        <?php if (!$recent_found_items || mysqli_num_rows($recent_found_items) === 0): ?>
+                            <li><span class="muted">Belum ada barang temuan yang dipublikasikan.</span></li>
+                        <?php else: ?>
+                            <?php while ($item = mysqli_fetch_assoc($recent_found_items)): ?>
+                                <li>
+                                    <span>
+                                        <strong><?= htmlspecialchars($item['nama_barang']) ?></strong><br>
+                                        <small class="muted"><?= htmlspecialchars($item['nama_kategori'] ?? 'Umum') ?> · <?= htmlspecialchars($item['lokasi_kejadian']) ?></small>
+                                    </span>
+                                    <a class="table-link" href="detail_barang.php?id=<?= (int) $item['id'] ?>">Lihat</a>
+                                </li>
+                            <?php endwhile; ?>
+                        <?php endif; ?>
+                    </ul>
+                </div>
             </div>
+            </main>
         <?php endif; ?>
+        </div>
     </div>
+    <script src="js/dashboard.js"></script>
 </body>
 </html>
