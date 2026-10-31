@@ -1,8 +1,15 @@
-
 .profile-page {
     min-height: 100vh;
     padding: 40px 20px;
-    background: #f5f5f5;
+    background:
+        linear-gradient(
+            90deg,
+            rgba(241, 245, 249, 0.88) 0%,
+            rgba(241, 245, 249, 0.82) 25%,
+            rgba(241, 245, 249, 0.7) 55%,
+            rgba(241, 245, 249, 0.76) 100%
+        ),
+        url("../img/foto pendukung ta.jpeg") center/cover no-repeat;
     font-family: Arial, sans-serif;
     color: #222;
 }
@@ -14,10 +21,13 @@
 
 .profile-card {
     padding: 35px;
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(96, 165, 250, 0.35);
+    border-radius: 18px;
+    box-shadow: 0 18px 45px rgba(37, 99, 235, 0.08);
+    backdrop-filter: blur(4px);
 }
+
 .profile-top {
     display: flex;
     align-items: center;
@@ -29,9 +39,11 @@
     align-items: center;
     gap: 20px;
 }
+
 .profile-top h1 {
     margin: 0 0 8px;
     font-size: 32px;
+    color: #1e3a8a;
 }
 
 .profile-top p {
@@ -49,7 +61,7 @@
 .profile-divider {
     height: 1px;
     margin: 25px 0;
-    background: #ddd;
+    background: rgba(96, 165, 250, 0.28);
 }
 
 .profile-photo {
@@ -60,9 +72,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 3px solid #4432df;
+    border: 3px solid #1d4ed8;
     border-radius: 50%;
-    background: #eeeaff;
+    background: #dbeafe;
 }
 
 .profile-photo img {
@@ -72,7 +84,7 @@
 }
 
 .profile-photo i {
-    color: #4432df;
+    color: #1d4ed8;
     font-size: 28px;
 }
 
@@ -84,19 +96,21 @@
 
 .info-box {
     padding: 18px 20px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
+    border: 1px solid rgba(148, 163, 184, 0.45);
+    border-radius: 12px;
+    background: rgba(248, 250, 255, 0.7);
 }
 
 .info-box label {
     display: block;
     margin-bottom: 7px;
-    color: #666;
+    color: #475569;
     font-size: 14px;
 }
 
 .info-box strong {
     font-size: 17px;
+    color: #1f2937;
 }
 
 .profile-actions {
@@ -105,7 +119,7 @@
     gap: 10px;
     margin-top: 30px;
     padding-top: 25px;
-    border-top: 1px solid #eee;
+    border-top: 1px solid rgba(148, 163, 184, 0.3);
 }
 
 .profile-actions a {
@@ -116,46 +130,50 @@
     justify-content: center;
     gap: 7px;
     box-sizing: border-box;
-    border-radius: 5px;
+    border-radius: 8px;
     text-decoration: none;
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: #e0f2fe;
+    transition: 0.22s ease;
+    box-shadow: 0 8px 16px rgba(37, 99, 235, 0.18);
 }
 
 .btn-edit {
-    background: #ffc400;
-    color: #fff;
+    background: linear-gradient(135deg, #60a5fa, #2563eb);
+    color: #eff6ff;
 }
 
 .btn-kembali {
-    background: #0371f6;
-    color: #fff;
+    background: linear-gradient(135deg, #60a5fa, #1d4ed8);
+    color: #eff6ff;
 }
 
 .btn-hapus {
-    background: #f70707;
-    color: #fff;
+    background: linear-gradient(135deg, #3b82f6, #1e3a8a);
+    color: #e0f2fe;
 }
 
 .btn-logout {
-    background: #000;
-    color: #fff;
+    background: linear-gradient(135deg, #1f2937, #0f172a);
+    color: #e2e8f0;
 }
 
 .btn-edit:hover {
-    background: #e0ad00;
+    background: linear-gradient(135deg, #93c5fd, #1d4ed8);
 }
 
 .btn-kembali:hover {
-    background: #025bc5;
+    background: linear-gradient(135deg, #93c5fd, #1d4ed8);
 }
 
 .btn-hapus:hover {
-    background: #c90000;
+    background: linear-gradient(135deg, #60a5fa, #172554);
 }
 
 .btn-logout:hover {
-    background: #333;
+    background: linear-gradient(135deg, #374151, #020817);
 }
 
 .btn-profile,
@@ -232,15 +250,18 @@
 }
 @media (max-width: 768px) {
     .profile-card {
-    padding: 25px;
+        padding: 25px;
     }
+
     .profile-grid {
-    grid-template-columns: 1fr;
+        grid-template-columns: 1fr;
     }
+
     .profile-actions {
-    flex-wrap: wrap;
+        flex-wrap: wrap;
     }
+
     .profile-actions a {
-    width: 140px;
+        width: 140px;
     }
 }
