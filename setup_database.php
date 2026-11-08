@@ -60,10 +60,36 @@ $queries = [
             lokasi_kejadian VARCHAR(100) NOT NULL,
             tanggal_kejadian DATE NOT NULL,
             status_barang ENUM('Hilang','Ditemukan','Dikembalikan') NOT NULL,
+            is_deleted TINYINT(1) NOT NULL DEFAULT 0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             FOREIGN KEY (kategori_id) REFERENCES kategori(id),
             FOREIGN KEY (pemilik_id) REFERENCES users(id)
+        )
+    ",
+    "barang_history" => "
+        CREATE TABLE IF NOT EXISTS barang_history (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            barang_id INT NOT NULL,
+            kategori_id INT NOT NULL,
+            pemilik_id INT NOT NULL,
+            nama_barang VARCHAR(100) NOT NULL,
+            foto VARCHAR(255) NULL,
+            deskripsi TEXT NULL,
+            lokasi_kejadian VARCHAR(100) NOT NULL,
+            tanggal_kejadian DATE NOT NULL,
+            status_barang ENUM('Hilang','Ditemukan','Dikembalikan') NOT NULL DEFAULT 'Dikembalikan',
+            tanggal_kembali DATE NULL,
+            catatan TEXT NULL,
+            admin_id INT NULL,
+            laporan_id INT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_barang_history (barang_id),
+            FOREIGN KEY (barang_id) REFERENCES barang(id) ON DELETE RESTRICT,
+            FOREIGN KEY (kategori_id) REFERENCES kategori(id),
+            FOREIGN KEY (pemilik_id) REFERENCES users(id),
+            FOREIGN KEY (admin_id) REFERENCES users(id)
         )
     ",
     "laporan" => "
@@ -100,6 +126,24 @@ foreach ($queries as $nama_tabel => $sql) {
         echo "Tabel $nama_tabel berhasil dibuat.<br>";
     } else {
         echo "Gagal membuat tabel $nama_tabel: " . mysqli_error($conn) . "<br>";
+    }
+}
+
+$cekKolom = mysqli_query($conn, "
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = DATABASE()
+      AND table_name = 'barang'
+      AND column_name = 'is_deleted'
+    LIMIT 1
+");
+
+if (mysqli_num_rows($cekKolom) === 0) {
+    $alterBarang = mysqli_query($conn, "ALTER TABLE barang ADD COLUMN is_deleted TINYINT(1) NOT NULL DEFAULT 0 AFTER status_barang");
+    if ($alterBarang) {
+        echo "Kolom is_deleted berhasil ditambahkan ke tabel barang.<br>";
+    } else {
+        echo "Gagal menambahkan kolom is_deleted: " . mysqli_error($conn) . "<br>";
     }
 }
 

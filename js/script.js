@@ -23,9 +23,10 @@ document.addEventListener("DOMContentLoaded", function () {
             const text = card.textContent.toLowerCase();
 
             const status = card.dataset.status;
+            const normalizedStatus = status === "dikembalikan" ? "ditemukan" : status;
             const category = card.dataset.category;
             const matchSearch = !keyword || text.includes(keyword);
-            const matchStatus = selectedStatus === "semua" || status === selectedStatus;
+            const matchStatus = selectedStatus === "semua" || normalizedStatus === selectedStatus;
             const matchCategory = selectedCategory === "semua" ||
                 category === selectedCategory ||
                 (selectedCategory === "tas & dompet" &&

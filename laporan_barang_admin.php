@@ -2,13 +2,34 @@
 session_start();
 require_once __DIR__ . "/koneksi.php";
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!isset($_SESSION["user_id"]) || (strtolower($_SESSION["role"] ?? "user") !== "admin")) {
+        header("Location: login.php");
+        exit;
+    }
+
+    $barangId = (int) ($_POST['barang_id'] ?? 0);
+    $toggleDeleted = isset($_POST['toggle_deleted']) ? (int) $_POST['toggle_deleted'] : null;
+
+    if ($barangId > 0 && $toggleDeleted !== null) {
+        $newDeleted = $toggleDeleted === 1 ? 1 : 0;
+        $stmt = mysqli_prepare($koneksi, "UPDATE barang SET is_deleted = ?, updated_at = NOW() WHERE id = ?");
+        mysqli_stmt_bind_param($stmt, "ii", $newDeleted, $barangId);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+    }
+
+    header("Location: laporan_barang_admin.php");
+    exit;
+}
+
 if (!isset($_SESSION["user_id"]) || (strtolower($_SESSION["role"] ?? "user") !== "admin")) {
     header("Location: login.php");
     exit;
 }
 
 $search = trim($_GET["search"] ?? "");
-$filter_jenis = in_array($_GET["jenis"] ?? "", ["Hilang", "Temuan"], true) ? $_GET["jenis"] : "";
+$filter_jenis = in_array($_GET["jenis"] ?? "", ["Hilang", "Ditemukan", "Dikembalikan", "Disembunyikan"], true) ? $_GET["jenis"] : "";
 
 $query = "
     SELECT 
@@ -16,6 +37,7 @@ $query = "
         b.nama_barang, 
         b.foto, 
         b.status_barang, 
+        b.is_deleted,
         b.deskripsi,
         b.lokasi_kejadian, 
         b.tanggal_kejadian, 
@@ -38,7 +60,11 @@ if ($search !== "") {
 
 if ($filter_jenis !== "") {
     $filterEscaped = mysqli_real_escape_string($koneksi, $filter_jenis);
-    $query .= " AND b.status_barang = '$filterEscaped'";
+    if ($filter_jenis === 'Disembunyikan') {
+        $query .= " AND b.is_deleted = 1";
+    } else {
+        $query .= " AND b.status_barang = '$filterEscaped'";
+    }
 }
 
 $query .= " ORDER BY b.created_at DESC";
@@ -50,11 +76,15 @@ $stats = mysqli_fetch_assoc(mysqli_query($koneksi, "
     SELECT
         SUM(CASE WHEN status_barang = 'Hilang' THEN 1 ELSE 0 END) AS total_hilang,
         SUM(CASE WHEN status_barang = 'Ditemukan' THEN 1 ELSE 0 END) AS total_ditemukan,
+        SUM(CASE WHEN status_barang = 'Dikembalikan' THEN 1 ELSE 0 END) AS total_dikembalikan,
+        SUM(CASE WHEN is_deleted = 1 THEN 1 ELSE 0 END) AS total_disembunyikan,
         COUNT(*) AS total_barang
     FROM barang
 ")) ?: [
     'total_hilang' => 0,
     'total_ditemukan' => 0,
+    'total_dikembalikan' => 0,
+    'total_disembunyikan' => 0,
     'total_barang' => 0,
 ];
 ?>
@@ -246,6 +276,10 @@ $stats = mysqli_fetch_assoc(mysqli_query($koneksi, "
             background: #ebf9f1;
             color: #18794e;
         }
+        .badge-done {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
         .card-pemilik {
             background: #f6f8ff;
             padding: 12px;
@@ -391,6 +425,14 @@ $stats = mysqli_fetch_assoc(mysqli_query($koneksi, "
                 <div class="value"><?= (int) ($stats['total_ditemukan'] ?? 0) ?></div>
             </div>
             <div class="stat-box">
+                <div class="label">Dikembalikan</div>
+                <div class="value"><?= (int) ($stats['total_dikembalikan'] ?? 0) ?></div>
+            </div>
+            <div class="stat-box">
+                <div class="label">Disembunyikan</div>
+                <div class="value"><?= (int) ($stats['total_disembunyikan'] ?? 0) ?></div>
+            </div>
+            <div class="stat-box">
                 <div class="label">Hasil Pencarian</div>
                 <div class="value"><?= $total ?></div>
             </div>
@@ -398,12 +440,19 @@ $stats = mysqli_fetch_assoc(mysqli_query($koneksi, "
 
         <!-- Filter -->
         <div class="filter-bar">
+            <div class="view-toggle" aria-label="Filter daftar barang admin">
+                <button type="button" class="<?= $filter_jenis === '' ? 'active' : '' ?>" onclick="location.href='laporan_barang_admin.php'">Semua</button>
+                <button type="button" class="<?= $filter_jenis === 'Ditemukan' ? 'active' : '' ?>" onclick="location.href='laporan_barang_admin.php?jenis=Ditemukan'">Aktif</button>
+                <button type="button" class="<?= $filter_jenis === 'Disembunyikan' ? 'active' : '' ?>" onclick="location.href='laporan_barang_admin.php?jenis=Disembunyikan'">Disembunyikan</button>
+            </div>
             <form method="GET" action="laporan_barang_admin.php" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; width: 100%;">
                 <input type="text" name="search" placeholder="Cari nama barang, pemilik, atau lokasi..." value="<?= htmlspecialchars($search) ?>">
                 <select name="jenis">
                     <option value="">-- Semua Jenis --</option>
                     <option value="Hilang" <?= ($filter_jenis === "Hilang" ? "selected" : "") ?>>Hilang</option>
-                    <option value="Temuan" <?= ($filter_jenis === "Temuan" ? "selected" : "") ?>>Ditemukan</option>
+                    <option value="Ditemukan" <?= ($filter_jenis === "Ditemukan" ? "selected" : "") ?>>Ditemukan</option>
+                    <option value="Dikembalikan" <?= ($filter_jenis === "Dikembalikan" ? "selected" : "") ?>>Dikembalikan</option>
+                    <option value="Disembunyikan" <?= ($filter_jenis === "Disembunyikan" ? "selected" : "") ?>>Disembunyikan</option>
                 </select>
                 <button type="submit"><i class="fa-solid fa-magnifying-glass"></i> Cari</button>
                 <a href="laporan_barang_admin.php"><i class="fa-solid fa-rotate-left"></i> Reset</a>
@@ -434,9 +483,12 @@ $stats = mysqli_fetch_assoc(mysqli_query($koneksi, "
                                 
                                 <span class="card-kategori"><?= htmlspecialchars($barang['nama_kategori']) ?></span>
                                 <br>
-                                <span class="badge-status <?= $barang['status_barang'] === 'Hilang' ? 'badge-hilang' : 'badge-temuan' ?>">
+                                <span class="badge-status <?= $barang['status_barang'] === 'Hilang' ? 'badge-hilang' : ($barang['status_barang'] === 'Dikembalikan' ? 'badge-done' : 'badge-temuan') ?>">
                                     <?= htmlspecialchars($barang['status_barang']) ?>
                                 </span>
+                                <?php if (!empty($barang['is_deleted'])): ?>
+                                    <span class="badge-status" style="background:#fef3c7;color:#92400e; margin-left:8px;">Disembunyikan</span>
+                                <?php endif; ?>
 
                                 <div class="card-info">
                                     <strong>Lokasi:</strong> <?= htmlspecialchars($barang['lokasi_kejadian']) ?>
@@ -455,7 +507,9 @@ $stats = mysqli_fetch_assoc(mysqli_query($koneksi, "
                                     <strong><?= htmlspecialchars($barang['nama']) ?></strong>
                                     <div class="kelas"><?= htmlspecialchars($barang['kelas']) ?></div>
                                     <?php if (!empty($barang['no_telepon'])): ?>
-                                        <div class="kelas" style="margin-top: 4px;"><?= htmlspecialchars($barang['no_telepon']) ?></div>
+                                        <div class="kelas" style="margin-top: 4px;">
+                                            <?= htmlspecialchars($barang['no_telepon']) ?>
+                                        </div>
                                     <?php endif; ?>
                                 </div>
 
@@ -474,6 +528,14 @@ $stats = mysqli_fetch_assoc(mysqli_query($koneksi, "
                                             <i class="fa-brands fa-whatsapp"></i> WhatsApp
                                         </a>
                                     <?php endif; ?>
+                                    <form method="POST" action="laporan_barang_admin.php" style="width: 100%; margin-top: 8px;">
+                                        <input type="hidden" name="barang_id" value="<?= (int) $barang['id'] ?>">
+                                        <input type="hidden" name="toggle_deleted" value="<?= !empty($barang['is_deleted']) ? 0 : 1 ?>">
+                                        <button type="submit" class="btn-small <?= !empty($barang['is_deleted']) ? 'btn-detail' : 'btn-whatsapp' ?>" style="width: 100%;">
+                                            <i class="fa-solid fa-<?= !empty($barang['is_deleted']) ? 'eye' : 'eye-slash' ?>"></i>
+                                            <?= !empty($barang['is_deleted']) ? 'Tampilkan' : 'Sembunyikan' ?>
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
                         </div>

@@ -9,6 +9,8 @@ if ($id <= 0) {
     exit;
 }
 
+$isAdmin = !empty($_SESSION['user_id']) && (strtolower($_SESSION['role'] ?? 'user') === 'admin');
+
 $sql = "
     SELECT
         b.id,
@@ -18,32 +20,14 @@ $sql = "
         b.lokasi_kejadian,
         b.tanggal_kejadian,
         b.status_barang,
+        b.is_deleted,
         k.nama_kategori
     FROM barang b
     LEFT JOIN kategori k ON k.id = b.kategori_id
     WHERE b.id = ?
       AND (
-          (
-              b.status_barang = 'Ditemukan'
-              AND (
-                  NOT EXISTS (SELECT 1 FROM laporan l WHERE l.barang_id = b.id)
-                  OR EXISTS (
-                      SELECT 1 FROM laporan l
-                      WHERE l.barang_id = b.id
-                        AND l.jenis_laporan = 'Temuan'
-                        AND l.status = 'Diproses'
-                  )
-              )
-          )
-          OR (
-              b.status_barang = 'Hilang'
-              AND EXISTS (
-                  SELECT 1 FROM laporan l
-                  WHERE l.barang_id = b.id
-                    AND l.jenis_laporan = 'Hilang'
-                    AND l.status = 'Diproses'
-              )
-          )
+          b.is_deleted = 0
+          OR $isAdmin = 1
       )
     LIMIT 1
 ";
@@ -55,7 +39,7 @@ $item = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 mysqli_stmt_close($stmt);
 
 if (!$item) {
-    header('Location: index.php');
+    header('Location: ' . ($isAdmin ? 'laporan_barang_admin.php' : 'index.php'));
     exit;
 }
 
@@ -185,7 +169,7 @@ if (substr($wa, 0, 1) === '0') {
             </div>
 
             <div class="card">
-                <span class="tag <?= $item['status_barang'] === 'Ditemukan' ? 'tag-found' : 'tag-lost' ?>">
+                <span class="tag <?= $item['status_barang'] === 'Ditemukan' ? 'tag-found' : ($item['status_barang'] === 'Dikembalikan' ? 'tag-found' : 'tag-lost') ?>">
                     <?= htmlspecialchars($item['status_barang']) ?>
                 </span>
                 <h1><?= htmlspecialchars($item['nama_barang']) ?></h1>

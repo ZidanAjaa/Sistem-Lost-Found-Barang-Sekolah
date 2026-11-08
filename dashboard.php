@@ -18,6 +18,38 @@ $csrfToken = $_SESSION['csrf_token'];
 $dashboardNotice = $_SESSION['dashboard_notice'] ?? '';
 unset($_SESSION['dashboard_notice']);
 
+function ensureBarangHistoryTable($conn) {
+    $sql = "
+        CREATE TABLE IF NOT EXISTS barang_history (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            barang_id INT NOT NULL,
+            kategori_id INT NOT NULL,
+            pemilik_id INT NOT NULL,
+            nama_barang VARCHAR(100) NOT NULL,
+            foto VARCHAR(255) NULL,
+            deskripsi TEXT NULL,
+            lokasi_kejadian VARCHAR(100) NOT NULL,
+            tanggal_kejadian DATE NOT NULL,
+            status_barang ENUM('Hilang','Ditemukan','Dikembalikan') NOT NULL DEFAULT 'Dikembalikan',
+            tanggal_kembali DATE NULL,
+            catatan TEXT NULL,
+            admin_id INT NULL,
+            laporan_id INT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_barang_history (barang_id),
+            FOREIGN KEY (barang_id) REFERENCES barang(id) ON DELETE RESTRICT,
+            FOREIGN KEY (kategori_id) REFERENCES kategori(id),
+            FOREIGN KEY (pemilik_id) REFERENCES users(id),
+            FOREIGN KEY (admin_id) REFERENCES users(id)
+        )
+    ";
+
+    mysqli_query($conn, $sql);
+}
+
+ensureBarangHistoryTable($koneksi);
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($role !== 'admin' || !hash_equals($csrfToken, $_POST['csrf_token'] ?? '')) {
         http_response_code(403);
@@ -29,6 +61,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         : 'dashboard.php#laporan-masuk';
     $laporanId = (int) ($_POST['laporan_id'] ?? 0);
     $statusBaru = $_POST['status'] ?? '';
+    $toggleDeleted = isset($_POST['toggle_deleted']) ? (int) $_POST['toggle_deleted'] : null;
+
+    if ($toggleDeleted !== null) {
+        $barangId = (int) ($_POST['barang_id'] ?? 0);
+        if ($barangId > 0) {
+            $newDeleted = $toggleDeleted === 1 ? 1 : 0;
+            $stmtDeleted = mysqli_prepare($koneksi, "UPDATE barang SET is_deleted = ?, updated_at = NOW() WHERE id = ?");
+            mysqli_stmt_bind_param($stmtDeleted, "ii", $newDeleted, $barangId);
+            mysqli_stmt_execute($stmtDeleted);
+            mysqli_stmt_close($stmtDeleted);
+
+            $_SESSION['dashboard_notice'] = $newDeleted ? 'Barang berhasil disembunyikan dari dashboard publik.' : 'Barang berhasil ditampilkan kembali di dashboard publik.';
+            header('Location: dashboard.php#kelola-barang');
+            exit;
+        }
+    }
 
     if ($laporanId <= 0 || !in_array($statusBaru, ['Diproses', 'Selesai'], true)) {
         $_SESSION['dashboard_notice'] = 'Permintaan perubahan status tidak valid.';
@@ -60,14 +108,81 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($statusBaru === 'Selesai') {
             $stmtBarang = mysqli_prepare($koneksi, "
+                SELECT b.id, b.kategori_id, b.pemilik_id, b.nama_barang, b.foto, b.deskripsi,
+                       b.lokasi_kejadian, b.tanggal_kejadian, b.status_barang, l.id AS laporan_id
+                FROM barang b
+                JOIN laporan l ON l.barang_id = b.id
+                WHERE l.id = ?
+                LIMIT 1
+            ");
+            mysqli_stmt_bind_param($stmtBarang, "i", $laporanId);
+            mysqli_stmt_execute($stmtBarang);
+            $barangUntukHistory = mysqli_fetch_assoc(mysqli_stmt_get_result($stmtBarang));
+            mysqli_stmt_close($stmtBarang);
+
+            if ($barangUntukHistory) {
+                $barangId = (int) $barangUntukHistory['id'];
+                $kategoriId = (int) $barangUntukHistory['kategori_id'];
+                $pemilikId = (int) $barangUntukHistory['pemilik_id'];
+                $namaBarang = (string) $barangUntukHistory['nama_barang'];
+                $fotoBarang = $barangUntukHistory['foto'];
+                $deskripsiBarang = $barangUntukHistory['deskripsi'];
+                $lokasiBarang = (string) $barangUntukHistory['lokasi_kejadian'];
+                $tanggalBarang = (string) $barangUntukHistory['tanggal_kejadian'];
+                $adminId = (int) $_SESSION['user_id'];
+                $laporanTerkait = (int) $laporanId;
+
+                $stmtHistory = mysqli_prepare($koneksi, "
+                    INSERT INTO barang_history (
+                        barang_id, kategori_id, pemilik_id, nama_barang, foto, deskripsi,
+                        lokasi_kejadian, tanggal_kejadian, status_barang, tanggal_kembali,
+                        catatan, admin_id, laporan_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Dikembalikan', CURDATE(), ?, ?, ?)
+                    ON DUPLICATE KEY UPDATE
+                        kategori_id = VALUES(kategori_id),
+                        pemilik_id = VALUES(pemilik_id),
+                        nama_barang = VALUES(nama_barang),
+                        foto = VALUES(foto),
+                        deskripsi = VALUES(deskripsi),
+                        lokasi_kejadian = VALUES(lokasi_kejadian),
+                        tanggal_kejadian = VALUES(tanggal_kejadian),
+                        status_barang = 'Dikembalikan',
+                        tanggal_kembali = CURDATE(),
+                        catatan = VALUES(catatan),
+                        admin_id = VALUES(admin_id),
+                        laporan_id = VALUES(laporan_id),
+                        updated_at = NOW()
+                ");
+
+                $catatan = "Barang dikembalikan ke pemiliknya dan dicatat ke riwayat.";
+                mysqli_stmt_bind_param(
+                    $stmtHistory,
+                    "iiissssssii",
+                    $barangId,
+                    $kategoriId,
+                    $pemilikId,
+                    $namaBarang,
+                    $fotoBarang,
+                    $deskripsiBarang,
+                    $lokasiBarang,
+                    $tanggalBarang,
+                    $catatan,
+                    $adminId,
+                    $laporanTerkait
+                );
+                mysqli_stmt_execute($stmtHistory);
+                mysqli_stmt_close($stmtHistory);
+            }
+
+            $stmtBarangUpdate = mysqli_prepare($koneksi, "
                 UPDATE barang b
                 JOIN laporan l ON l.barang_id = b.id
                 SET b.status_barang = 'Dikembalikan', b.updated_at = NOW()
                 WHERE l.id = ?
             ");
-            mysqli_stmt_bind_param($stmtBarang, "i", $laporanId);
-            mysqli_stmt_execute($stmtBarang);
-            mysqli_stmt_close($stmtBarang);
+            mysqli_stmt_bind_param($stmtBarangUpdate, "i", $laporanId);
+            mysqli_stmt_execute($stmtBarangUpdate);
+            mysqli_stmt_close($stmtBarangUpdate);
         }
 
         mysqli_commit($koneksi);
@@ -132,6 +247,16 @@ $recent_reports = mysqli_query($koneksi, "
     LIMIT 30
 ");
 
+$recent_history = mysqli_query($koneksi, "
+    SELECT bh.id, bh.nama_barang, bh.status_barang, bh.tanggal_kembali, bh.lokasi_kejadian,
+           u.nama AS pemilik, k.nama_kategori, bh.created_at
+    FROM barang_history bh
+    JOIN users u ON u.id = bh.pemilik_id
+    LEFT JOIN kategori k ON k.id = bh.kategori_id
+    ORDER BY bh.created_at DESC
+    LIMIT 10
+");
+
 $recent_activity = mysqli_query($koneksi, "
     SELECT l.id, l.jenis_laporan, l.status, l.updated_at, b.nama_barang, u.nama AS pelapor
     FROM laporan l
@@ -143,17 +268,17 @@ $recent_activity = mysqli_query($koneksi, "
 
 $recent_found_items = mysqli_query($koneksi, "
     SELECT b.id, b.nama_barang, b.lokasi_kejadian, b.tanggal_kejadian,
-           b.created_at, k.nama_kategori
+           b.created_at, k.nama_kategori, b.status_barang
     FROM barang b
     LEFT JOIN kategori k ON k.id = b.kategori_id
-    WHERE b.status_barang = 'Ditemukan'
+    WHERE b.status_barang IN ('Ditemukan', 'Dikembalikan')
       AND (
           NOT EXISTS (SELECT 1 FROM laporan l WHERE l.barang_id = b.id)
           OR EXISTS (
               SELECT 1 FROM laporan l
               WHERE l.barang_id = b.id
                 AND l.jenis_laporan = 'Temuan'
-                AND l.status = 'Diproses'
+                AND l.status IN ('Diproses', 'Selesai')
           )
       )
     ORDER BY b.created_at DESC
@@ -182,6 +307,19 @@ $currentUserId = (int) $_SESSION['user_id'];
 mysqli_stmt_bind_param($my_reports_stmt, "i", $currentUserId);
 mysqli_stmt_execute($my_reports_stmt);
 $my_reports = mysqli_stmt_get_result($my_reports_stmt);
+
+$my_history_stmt = mysqli_prepare($koneksi, "
+    SELECT bh.id, bh.nama_barang, bh.status_barang, bh.tanggal_kembali,
+           bh.lokasi_kejadian, bh.deskripsi, k.nama_kategori
+    FROM barang_history bh
+    LEFT JOIN kategori k ON k.id = bh.kategori_id
+    WHERE bh.pemilik_id = ?
+    ORDER BY bh.created_at DESC
+    LIMIT 10
+");
+mysqli_stmt_bind_param($my_history_stmt, "i", $currentUserId);
+mysqli_stmt_execute($my_history_stmt);
+$my_history = mysqli_stmt_get_result($my_history_stmt);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -608,6 +746,48 @@ $my_reports = mysqli_stmt_get_result($my_reports_stmt);
                             </ul>
                         </div>
                     </section>
+
+                    <section id="history-barang" class="section-block">
+                        <div class="section-header">
+                            <div>
+                                <p class="eyebrow">History</p>
+                                <h2>Riwayat Barang Sudah Dikembalikan</h2>
+                            </div>
+                        </div>
+
+                        <div class="panel">
+                            <div class="table-wrap">
+                                <table class="table-list dashboard-searchable" style="width:100%;">
+                                    <thead>
+                                        <tr>
+                                            <th>Nama Barang</th>
+                                            <th>Kategori</th>
+                                            <th>Pemilik</th>
+                                            <th>Lokasi</th>
+                                            <th>Tanggal Kembali</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php if (!$recent_history || mysqli_num_rows($recent_history) === 0): ?>
+                                            <tr><td colspan="6" class="muted">Belum ada barang yang dikembalikan.</td></tr>
+                                        <?php else: ?>
+                                            <?php while ($history = mysqli_fetch_assoc($recent_history)): ?>
+                                                <tr>
+                                                    <td><strong><?= htmlspecialchars($history['nama_barang']) ?></strong></td>
+                                                    <td><?= htmlspecialchars($history['nama_kategori'] ?? 'Umum') ?></td>
+                                                    <td><?= htmlspecialchars($history['pemilik']) ?></td>
+                                                    <td class="muted"><?= htmlspecialchars($history['lokasi_kejadian']) ?></td>
+                                                    <td class="muted"><?= htmlspecialchars($history['tanggal_kembali'] ? date('d-m-Y', strtotime($history['tanggal_kembali'])) : '-') ?></td>
+                                                    <td><span class="pill pill-done"><?= htmlspecialchars($history['status_barang']) ?></span></td>
+                                                </tr>
+                                            <?php endwhile; ?>
+                                        <?php endif; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
                 </main>
 
         <?php else: ?>
@@ -716,11 +896,50 @@ $my_reports = mysqli_stmt_get_result($my_reports_stmt);
                                         <strong><?= htmlspecialchars($item['nama_barang']) ?></strong><br>
                                         <small class="muted"><?= htmlspecialchars($item['nama_kategori'] ?? 'Umum') ?> · <?= htmlspecialchars($item['lokasi_kejadian']) ?></small>
                                     </span>
-                                    <a class="table-link" href="detail_barang.php?id=<?= (int) $item['id'] ?>">Lihat</a>
+                                    <span class="pill <?= $item['status_barang'] === 'Dikembalikan' ? 'pill-done' : 'pill-ditemukan' ?>">
+                                        <?= htmlspecialchars($item['status_barang']) ?>
+                                    </span>
                                 </li>
                             <?php endwhile; ?>
                         <?php endif; ?>
                     </ul>
+                </div>
+
+                <div class="panel" id="riwayat-kembali">
+                    <div class="section-header">
+                        <div>
+                            <h2>Riwayat Barang Sudah Dikembalikan</h2>
+                            <p class="muted workflow-note">Daftar barang Anda yang sudah dikonfirmasi kembali ke pemilik.</p>
+                        </div>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="table-list dashboard-searchable" style="width:100%;">
+                            <thead>
+                                <tr>
+                                    <th>Nama Barang</th>
+                                    <th>Kategori</th>
+                                    <th>Lokasi</th>
+                                    <th>Tanggal Kembali</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (!$my_history || mysqli_num_rows($my_history) === 0): ?>
+                                    <tr><td colspan="5" class="muted">Belum ada barang Anda yang dikembalikan.</td></tr>
+                                <?php else: ?>
+                                    <?php while ($history = mysqli_fetch_assoc($my_history)): ?>
+                                        <tr>
+                                            <td><strong><?= htmlspecialchars($history['nama_barang']) ?></strong></td>
+                                            <td><?= htmlspecialchars($history['nama_kategori'] ?? 'Umum') ?></td>
+                                            <td class="muted"><?= htmlspecialchars($history['lokasi_kejadian']) ?></td>
+                                            <td class="muted"><?= htmlspecialchars($history['tanggal_kembali'] ? date('d-m-Y', strtotime($history['tanggal_kembali'])) : '-') ?></td>
+                                            <td><span class="pill pill-done"><?= htmlspecialchars($history['status_barang']) ?></span></td>
+                                        </tr>
+                                    <?php endwhile; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             </main>

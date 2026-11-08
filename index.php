@@ -26,16 +26,21 @@ $category = trim($_GET["category"] ?? "");
 
 $stats = mysqli_fetch_assoc(mysqli_query($koneksi, "
     SELECT COUNT(*) AS total_barang,
-           SUM(status_barang = 'Ditemukan' AND (
-               NOT EXISTS (SELECT 1 FROM laporan l WHERE l.barang_id = barang.id)
-               OR EXISTS (
-                   SELECT 1 FROM laporan l
-                   WHERE l.barang_id = barang.id
-                     AND l.jenis_laporan = 'Temuan'
-                     AND l.status = 'Diproses'
+           SUM(
+               status_barang IN ('Ditemukan', 'Dikembalikan')
+               AND is_deleted = 0
+               AND (
+                   NOT EXISTS (SELECT 1 FROM laporan l WHERE l.barang_id = barang.id)
+                   OR EXISTS (
+                       SELECT 1 FROM laporan l
+                       WHERE l.barang_id = barang.id
+                         AND l.jenis_laporan = 'Temuan'
+                         AND l.status IN ('Diproses', 'Selesai')
+                   )
                )
-           )) AS total_ditemukan
+           ) AS total_ditemukan
     FROM barang
+    WHERE is_deleted = 0
 ")) ?: ["total_barang" => 0, "total_ditemukan" => 0];
 
 $totalDilaporkan = (int)($stats["total_barang"] ?? 0);
@@ -59,7 +64,8 @@ $sql = "SELECT b.id, b.nama_barang, b.foto, b.deskripsi,
         k.nama_kategori
         FROM barang b
         LEFT JOIN kategori k ON k.id=b.kategori_id
-        WHERE (
+        WHERE b.is_deleted = 0
+          AND (
               (
                   b.status_barang = 'Ditemukan'
                   AND (
@@ -71,6 +77,9 @@ $sql = "SELECT b.id, b.nama_barang, b.foto, b.deskripsi,
                             AND l.status = 'Diproses'
                       )
                   )
+              )
+              OR (
+                  b.status_barang = 'Dikembalikan'
               )
               OR (
                   b.status_barang = 'Hilang'
@@ -101,7 +110,12 @@ if ($category !== "" && strtolower($category) !== "semua") {
     $types .= "s";
 }
 
-$sql .= " ORDER BY b.created_at DESC";
+$sql .= " ORDER BY CASE
+                WHEN b.status_barang = 'Hilang' THEN 0
+                WHEN b.status_barang = 'Ditemukan' THEN 1
+                WHEN b.status_barang = 'Dikembalikan' THEN 2
+                ELSE 3
+            END, b.created_at DESC";
 
 $stmt = mysqli_prepare($koneksi, $sql);
 
@@ -131,8 +145,9 @@ while ($row = mysqli_fetch_assoc($result)) {
         "pemilik" => "Diverifikasi Admin",
         "status" => $row["status_barang"] === "Hilang"
             ? "Belum Ditemukan"
-            : "Ditemukan",
-        "status_raw" => $row["status_barang"]
+            : ($row["status_barang"] === "Dikembalikan" ? "Sudah Dikembalikan" : "Ditemukan"),
+        "status_raw" => $row["status_barang"],
+        "status_group" => strtolower($row["status_barang"]) === "dikembalikan" ? "ditemukan" : strtolower($row["status_barang"])
     ];
 }
 ?>
@@ -304,7 +319,7 @@ while ($row = mysqli_fetch_assoc($result)) {
             <?php foreach ($barang as $item): ?>
                 <article
                     class="barang-card"
-                    data-status="<?= strtolower($item["status_raw"]) ?>"
+                    data-status="<?= htmlspecialchars($item["status_group"]) ?>"
                     data-category="<?= htmlspecialchars(strtolower($item["kategori"])) ?>"
                 >
                     <div class="barang-image">
@@ -313,7 +328,7 @@ while ($row = mysqli_fetch_assoc($result)) {
                             alt="<?= htmlspecialchars($item["nama"]) ?>"
                         >
 
-                        <span class="status-badge <?= $item["status_raw"] === "Ditemukan" ? "status-found" : "status-lost" ?>">
+                        <span class="status-badge <?= $item["status_raw"] === "Ditemukan" ? "status-found" : ($item["status_raw"] === "Dikembalikan" ? "status-returned" : "status-lost") ?>">
                             <?= $item["status"] ?>
                         </span>
                     </div>
