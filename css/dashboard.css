@@ -516,6 +516,109 @@ body {
     padding: 20px;
 }
 
+.section-block#kategori-barang .panel {
+    padding: 20px;
+}
+
+.category-create-form {
+    padding-bottom: 18px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #edf0f4;
+}
+
+.category-create-form > label {
+    display: block;
+    margin-bottom: 8px;
+    color: #465160;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.category-form-controls,
+.category-edit-form {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.category-form-controls input,
+.category-edit-form input[type="text"] {
+    min-width: 0;
+    height: 40px;
+    padding: 8px 11px;
+    border: 1px solid #dfe3e9;
+    border-radius: 8px;
+    background: #fff;
+    color: #273344;
+    font: inherit;
+}
+
+.category-form-controls input {
+    flex: 1;
+}
+
+.category-edit-form input[type="text"] {
+    flex: 1;
+}
+
+.dashboard-category-list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.category-row {
+    display: flex;
+    align-items: center;
+    justify-content: stretch;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid #edf0f4;
+}
+
+.category-row:last-child {
+    border-bottom: 0;
+}
+
+.category-row form {
+    margin: 0;
+}
+
+.category-row .category-edit-form {
+    flex: 1;
+    min-width: 0;
+}
+
+.category-row > form:last-child {
+    flex: 0 0 auto;
+}
+
+.category-row .pill {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+.btn-category-danger {
+    min-height: 38px;
+    padding: 8px 12px;
+    background: #fff0ef;
+    color: #b42318;
+}
+
+.btn-category-danger:hover {
+    background: #ffe2df;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 .btn-row {
     display: flex;
     flex-wrap: wrap;
@@ -721,6 +824,73 @@ body {
     min-height: 40px;
 }
 
+.report-panel-heading {
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.report-panel-heading h2 {
+    margin-bottom: 7px;
+}
+
+.report-panel-heading .workflow-note {
+    margin-bottom: 0;
+}
+
+.report-detail-cell {
+    min-width: 280px;
+    max-width: 540px;
+    overflow-wrap: anywhere;
+    line-height: 1.55;
+}
+
+.report-detail-cell p {
+    margin: 8px 0;
+}
+
+.report-item-meta {
+    margin-top: 3px;
+    color: #788391;
+    font-size: 12px;
+}
+
+.report-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 0 2px;
+}
+
+.pagination-summary {
+    color: #465160;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+}
+
+.pagination-summary small {
+    display: block;
+    margin-top: 3px;
+    color: #788391;
+    font-size: 11px;
+    font-weight: 400;
+}
+
+.pagination-disabled {
+    color: #98a1ad;
+    cursor: not-allowed;
+    pointer-events: none;
+    background: #f7f8fa;
+}
+
+.btn-check-detail {
+    min-height: 34px;
+    padding: 7px 10px;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
 .user-dashboard .table-list th,
 .user-dashboard .table-list td {
     vertical-align: middle;
@@ -746,6 +916,10 @@ body {
 
 .user-dashboard .table-list {
     min-width: 480px;
+}
+
+.user-dashboard #laporan-saya .table-list {
+    min-width: 860px;
 }
 
 .user-found-panel .mini-list > li > span:first-child {
@@ -916,6 +1090,48 @@ body {
 
     .dashboard-notice {
         margin: 12px 14px 0;
+    }
+
+    .category-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .category-row .category-edit-form {
+        width: 100%;
+    }
+
+    .category-edit-form {
+        flex-wrap: wrap;
+    }
+
+    .category-edit-form input[type="text"] {
+        flex-basis: calc(100% - 90px);
+    }
+
+    .category-row > form:last-child .btn {
+        width: 100%;
+    }
+
+    .report-panel-heading {
+        align-items: stretch;
+    }
+
+    .report-panel-heading > .btn {
+        align-self: flex-start;
+    }
+
+    .report-pagination {
+        flex-wrap: wrap;
+    }
+
+    .report-pagination .btn {
+        flex: 1 1 auto;
+    }
+
+    .pagination-summary {
+        order: -1;
+        flex-basis: 100%;
     }
 
     .user-dashboard .dashboard-hero {

@@ -10,6 +10,10 @@ if (!isset($_SESSION["user_id"])) {
 $user_id = (int) $_SESSION["user_id"];
 $success = "";
 $error = "";
+if (empty($_SESSION["csrf_token"])) {
+    $_SESSION["csrf_token"] = bin2hex(random_bytes(32));
+}
+$csrfToken = $_SESSION["csrf_token"];
 $edit_id = isset($_GET["edit"]) ? (int) $_GET["edit"] : 0;
 $requestedJenis = $_GET["jenis"] ?? "Hilang";
 $selectedJenis = in_array($requestedJenis, ["Hilang", "Temuan"], true) ? $requestedJenis : "Hilang";
@@ -57,6 +61,11 @@ function uploadFotoBarang($file): ?string
 }
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    if (!hash_equals($csrfToken, $_POST["csrf_token"] ?? "")) {
+        http_response_code(403);
+        exit("Permintaan tidak diizinkan.");
+    }
+
     $action = $_POST["action"] ?? "save";
 
     if ($action === "delete") {
@@ -119,8 +128,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $error = "Kategori tidak valid.";
             } else {
                 $transactionStarted = false;
+                $foto = null;
+                $fotoLamaUntukDihapus = null;
                 try {
-                    $foto = null;
                     if (isset($_FILES["foto"]) && $_FILES["foto"]["error"] !== UPLOAD_ERR_NO_FILE) {
                         $foto = uploadFotoBarang($_FILES["foto"]);
                     }
@@ -139,7 +149,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                         $fotoFinal = $foto ?? $existingBarang["foto"];
                         if ($foto && $existingBarang["foto"] && file_exists(__DIR__ . "/" . $existingBarang["foto"])) {
-                            unlink(__DIR__ . "/" . $existingBarang["foto"]);
+                            $fotoLamaUntukDihapus = $existingBarang["foto"];
                         }
 
                         mysqli_begin_transaction($koneksi);
@@ -179,6 +189,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         mysqli_commit($koneksi);
                         $transactionStarted = false;
 
+                        if ($fotoLamaUntukDihapus !== null) {
+                            unlink(__DIR__ . "/" . $fotoLamaUntukDihapus);
+                        }
                         $success = "Barang berhasil diperbarui.";
                     } else {
                         mysqli_begin_transaction($koneksi);
@@ -211,6 +224,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 } catch (Throwable $e) {
                     if ($transactionStarted) {
                         mysqli_rollback($koneksi);
+                    }
+                    if ($foto !== null && file_exists(__DIR__ . "/" . $foto)) {
+                        unlink(__DIR__ . "/" . $foto);
                     }
                     $error = "Gagal menyimpan data barang: " . htmlspecialchars($e->getMessage());
                 }
@@ -300,6 +316,7 @@ $barangList = mysqli_query($koneksi, "
             <div class="panel">
                 <h2 style="margin-top:0;"><?= ($edit_id > 0 ? "Edit" : "Tambah") . " Barang" ?></h2>
                 <form method="POST" action="barang_crud.php?jenis=<?= urlencode($selectedJenis) ?><?= $edit_id > 0 ? "&edit=" . $edit_id : "" ?>" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                     <input type="hidden" name="barang_id" value="<?= (int) ($editData["id"] ?? 0) ?>">
                     <input type="hidden" name="action" value="save">
 
@@ -399,6 +416,7 @@ $barangList = mysqli_query($koneksi, "
                                             <div class="actions">
                                                 <a href="barang_crud.php?edit=<?= (int) $row["id"] ?>" class="btn btn-secondary" style="padding:8px 10px;">Edit</a>
                                                 <form method="POST" action="barang_crud.php" style="display:inline;" onsubmit="return confirm('Hapus barang ini?')">
+                                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                                     <input type="hidden" name="action" value="delete">
                                                     <input type="hidden" name="barang_id" value="<?= (int) $row["id"] ?>">
                                                     <button type="submit" class="btn btn-danger" style="padding:8px 10px;">Hapus</button>

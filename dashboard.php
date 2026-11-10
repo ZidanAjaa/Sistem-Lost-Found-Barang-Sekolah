@@ -56,6 +56,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit('Permintaan tidak diizinkan.');
     }
 
+    $categoryAction = $_POST['category_action'] ?? '';
+    if ($categoryAction !== '') {
+        $categoryId = (int) ($_POST['category_id'] ?? 0);
+        $categoryName = trim($_POST['nama_kategori'] ?? '');
+
+        if (in_array($categoryAction, ['create', 'update'], true)) {
+            if ($categoryName === '' || mb_strlen($categoryName) > 50 || ($categoryAction === 'update' && $categoryId <= 0)) {
+                $_SESSION['dashboard_notice'] = 'Nama kategori wajib diisi dan maksimal 50 karakter.';
+            } else {
+                try {
+                    if ($categoryAction === 'create') {
+                        $stmtCategory = mysqli_prepare($koneksi, "INSERT INTO kategori (nama_kategori) VALUES (?)");
+                        mysqli_stmt_bind_param($stmtCategory, 's', $categoryName);
+                    } else {
+                        $stmtCategory = mysqli_prepare($koneksi, "UPDATE kategori SET nama_kategori = ? WHERE id = ?");
+                        mysqli_stmt_bind_param($stmtCategory, 'si', $categoryName, $categoryId);
+                    }
+                    mysqli_stmt_execute($stmtCategory);
+                    $changed = mysqli_stmt_affected_rows($stmtCategory);
+                    mysqli_stmt_close($stmtCategory);
+                    $_SESSION['dashboard_notice'] = $changed > 0
+                        ? ($categoryAction === 'create' ? 'Kategori berhasil ditambahkan.' : 'Kategori berhasil diperbarui.')
+                        : 'Tidak ada perubahan pada kategori.';
+                } catch (mysqli_sql_exception $e) {
+                    $_SESSION['dashboard_notice'] = (int) $e->getCode() === 1062
+                        ? 'Nama kategori tersebut sudah digunakan.'
+                        : 'Kategori gagal disimpan. Silakan coba kembali.';
+                }
+            }
+        } elseif ($categoryAction === 'delete' && $categoryId > 0) {
+            $stmtUsage = mysqli_prepare($koneksi, "
+                SELECT
+                    (SELECT COUNT(*) FROM barang WHERE kategori_id = ?) +
+                    (SELECT COUNT(*) FROM barang_history WHERE kategori_id = ?) AS total
+            ");
+            mysqli_stmt_bind_param($stmtUsage, 'ii', $categoryId, $categoryId);
+            mysqli_stmt_execute($stmtUsage);
+            $usage = mysqli_fetch_assoc(mysqli_stmt_get_result($stmtUsage));
+            mysqli_stmt_close($stmtUsage);
+
+            if ((int) ($usage['total'] ?? 0) > 0) {
+                $_SESSION['dashboard_notice'] = 'Kategori tidak dapat dihapus karena masih digunakan oleh data barang atau riwayat pengembalian.';
+            } else {
+                $stmtCategory = mysqli_prepare($koneksi, "DELETE FROM kategori WHERE id = ?");
+                mysqli_stmt_bind_param($stmtCategory, 'i', $categoryId);
+                mysqli_stmt_execute($stmtCategory);
+                $deleted = mysqli_stmt_affected_rows($stmtCategory);
+                mysqli_stmt_close($stmtCategory);
+                $_SESSION['dashboard_notice'] = $deleted > 0
+                    ? 'Kategori berhasil dihapus.'
+                    : 'Kategori tidak ditemukan.';
+            }
+        } else {
+            $_SESSION['dashboard_notice'] = 'Permintaan kategori tidak valid.';
+        }
+
+        header('Location: dashboard.php#kategori-barang');
+        exit;
+    }
+
     $returnTo = ($_POST['return_to'] ?? '') === 'laporan_masuk_admin.php'
         ? 'laporan_masuk_admin.php'
         : 'dashboard.php#laporan-masuk';
@@ -248,7 +308,12 @@ $recent_reports = mysqli_query($koneksi, "
 ");
 
 $recent_history = mysqli_query($koneksi, "
-    SELECT bh.id, bh.nama_barang, bh.status_barang, bh.tanggal_kembali, bh.lokasi_kejadian,
+    SELECT bh.id, COALESCE(bh.laporan_id, (
+               SELECT l.id FROM laporan l
+               WHERE l.barang_id = bh.barang_id
+               ORDER BY l.id DESC LIMIT 1
+           )) AS laporan_id,
+           bh.nama_barang, bh.status_barang, bh.tanggal_kembali, bh.lokasi_kejadian,
            u.nama AS pemilik, k.nama_kategori, bh.created_at
     FROM barang_history bh
     JOIN users u ON u.id = bh.pemilik_id
@@ -295,21 +360,43 @@ $my_report_stats = mysqli_fetch_assoc(mysqli_query($koneksi, "
     WHERE user_id = " . (int) $_SESSION['user_id']
 )) ?: ['total_hilang' => 0, 'total_ditemukan' => 0, 'diproses' => 0, 'selesai' => 0];
 
+$currentUserId = (int) $_SESSION['user_id'];
+$reportsPerPage = 10;
+$reportsPageParam = $_GET['reports_page'] ?? 1;
+$currentReportsPage = is_scalar($reportsPageParam) ? max(1, (int) $reportsPageParam) : 1;
+
+$my_reports_count_stmt = mysqli_prepare($koneksi, "SELECT COUNT(*) AS total FROM laporan WHERE user_id = ?");
+mysqli_stmt_bind_param($my_reports_count_stmt, "i", $currentUserId);
+mysqli_stmt_execute($my_reports_count_stmt);
+$my_reports_total = (int) (mysqli_fetch_assoc(mysqli_stmt_get_result($my_reports_count_stmt))['total'] ?? 0);
+mysqli_stmt_close($my_reports_count_stmt);
+
+$my_reports_total_pages = max(1, (int) ceil($my_reports_total / $reportsPerPage));
+$currentReportsPage = min($currentReportsPage, $my_reports_total_pages);
+$reportsOffset = ($currentReportsPage - 1) * $reportsPerPage;
+
 $my_reports_stmt = mysqli_prepare($koneksi, "
-    SELECT l.id, l.jenis_laporan, l.status, l.created_at, b.nama_barang
+    SELECT l.id, l.jenis_laporan, l.deskripsi AS deskripsi_laporan, l.tanggal_lapor,
+           l.status, l.created_at, b.nama_barang, b.foto, b.deskripsi AS deskripsi_barang,
+           b.lokasi_kejadian, b.tanggal_kejadian, b.status_barang, k.nama_kategori
     FROM laporan l
     JOIN barang b ON b.id = l.barang_id
+    LEFT JOIN kategori k ON k.id = b.kategori_id
     WHERE l.user_id = ?
     ORDER BY l.created_at DESC
-    LIMIT 10
+    LIMIT ? OFFSET ?
 ");
-$currentUserId = (int) $_SESSION['user_id'];
-mysqli_stmt_bind_param($my_reports_stmt, "i", $currentUserId);
+mysqli_stmt_bind_param($my_reports_stmt, "iii", $currentUserId, $reportsPerPage, $reportsOffset);
 mysqli_stmt_execute($my_reports_stmt);
 $my_reports = mysqli_stmt_get_result($my_reports_stmt);
 
 $my_history_stmt = mysqli_prepare($koneksi, "
-    SELECT bh.id, bh.nama_barang, bh.status_barang, bh.tanggal_kembali,
+    SELECT bh.id, COALESCE(bh.laporan_id, (
+               SELECT l.id FROM laporan l
+               WHERE l.barang_id = bh.barang_id
+               ORDER BY l.id DESC LIMIT 1
+           )) AS laporan_id,
+           bh.nama_barang, bh.status_barang, bh.tanggal_kembali,
            bh.lokasi_kejadian, bh.deskripsi, k.nama_kategori
     FROM barang_history bh
     LEFT JOIN kategori k ON k.id = bh.kategori_id
@@ -596,18 +683,41 @@ $my_history = mysqli_stmt_get_result($my_history_stmt);
                         </div>
 
                         <div class="panel">
-                            <ul class="mini-list">
+                            <form method="POST" action="dashboard.php#kategori-barang" class="category-create-form">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                <input type="hidden" name="category_action" value="create">
+                                <label for="nama-kategori-baru">Tambah kategori</label>
+                                <div class="category-form-controls">
+                                    <input type="text" id="nama-kategori-baru" name="nama_kategori" maxlength="50" placeholder="Contoh: Perlengkapan Olahraga" required>
+                                    <button class="btn btn-primary" type="submit">Tambah Kategori</button>
+                                </div>
+                            </form>
+
+                            <div class="dashboard-category-list">
                                 <?php if (!$recent_categories || mysqli_num_rows($recent_categories) === 0): ?>
-                                    <li><span class="muted">Belum ada kategori barang.</span></li>
+                                    <p class="muted">Belum ada kategori barang.</p>
                                 <?php else: ?>
                                     <?php while ($category = mysqli_fetch_assoc($recent_categories)): ?>
-                                        <li>
-                                            <span><?= htmlspecialchars($category['nama_kategori']) ?></span>
-                                            <span class="pill pill-progress"><?= (int) $category['total_barang'] ?> barang</span>
-                                        </li>
+                                        <div class="category-row">
+                                            <form method="POST" action="dashboard.php#kategori-barang" class="category-edit-form">
+                                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                                <input type="hidden" name="category_action" value="update">
+                                                <input type="hidden" name="category_id" value="<?= (int) $category['id'] ?>">
+                                                <label class="sr-only" for="kategori-<?= (int) $category['id'] ?>">Nama kategori</label>
+                                                <input type="text" id="kategori-<?= (int) $category['id'] ?>" name="nama_kategori" maxlength="50" value="<?= htmlspecialchars($category['nama_kategori']) ?>" required>
+                                                <span class="pill pill-progress"><?= (int) $category['total_barang'] ?> barang</span>
+                                                <button class="btn btn-secondary" type="submit">Simpan</button>
+                                            </form>
+                                            <form method="POST" action="dashboard.php#kategori-barang" onsubmit="return confirm('Hapus kategori ini? Kategori yang masih digunakan tidak dapat dihapus.');">
+                                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                                <input type="hidden" name="category_action" value="delete">
+                                                <input type="hidden" name="category_id" value="<?= (int) $category['id'] ?>">
+                                                <button class="btn btn-category-danger" type="submit">Hapus</button>
+                                            </form>
+                                        </div>
                                     <?php endwhile; ?>
                                 <?php endif; ?>
-                            </ul>
+                            </div>
                         </div>
                     </section>
 
@@ -766,11 +876,12 @@ $my_history = mysqli_stmt_get_result($my_history_stmt);
                                             <th>Lokasi</th>
                                             <th>Tanggal Kembali</th>
                                             <th>Status</th>
+                                            <th>Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <?php if (!$recent_history || mysqli_num_rows($recent_history) === 0): ?>
-                                            <tr><td colspan="6" class="muted">Belum ada barang yang dikembalikan.</td></tr>
+                                            <tr><td colspan="7" class="muted">Belum ada barang yang dikembalikan.</td></tr>
                                         <?php else: ?>
                                             <?php while ($history = mysqli_fetch_assoc($recent_history)): ?>
                                                 <tr>
@@ -780,6 +891,13 @@ $my_history = mysqli_stmt_get_result($my_history_stmt);
                                                     <td class="muted"><?= htmlspecialchars($history['lokasi_kejadian']) ?></td>
                                                     <td class="muted"><?= htmlspecialchars($history['tanggal_kembali'] ? date('d-m-Y', strtotime($history['tanggal_kembali'])) : '-') ?></td>
                                                     <td><span class="pill pill-done"><?= htmlspecialchars($history['status_barang']) ?></span></td>
+                                                    <td>
+                                                        <?php if (!empty($history['laporan_id'])): ?>
+                                                            <a class="btn btn-secondary btn-check-detail" href="detail_riwayat_laporan.php?id=<?= (int) $history['laporan_id'] ?>">Check Detail</a>
+                                                        <?php else: ?>
+                                                            <span class="muted">Detail tidak tersedia</span>
+                                                        <?php endif; ?>
+                                                    </td>
                                                 </tr>
                                             <?php endwhile; ?>
                                         <?php endif; ?>
@@ -838,18 +956,23 @@ $my_history = mysqli_stmt_get_result($my_history_stmt);
                 </div>
 
                 <div class="panel" id="laporan-saya">
-                    <h2>Riwayat Laporan</h2>
-                    <p class="muted workflow-note">Lihat perkembangan laporan kehilangan dan penemuan yang Anda kirim.</p>
+                    <div class="section-header report-panel-heading">
+                        <div>
+                            <h2>Riwayat Laporan</h2>
+                            <p class="muted workflow-note">Lihat perkembangan dan detail laporan kehilangan atau penemuan yang Anda kirim.</p>
+                        </div>
+                        <a href="index.php" class="btn btn-outline">Lihat Beranda</a>
+                    </div>
                     <div class="btn-row">
                         <a href="lapor_hilang.php" class="btn btn-primary">Lapor Barang Hilang</a>
                         <a href="lapor_temuan.php" class="btn btn-secondary">Lapor Barang Temuan</a>
                     </div>
                     <div class="table-wrap">
                         <table id="riwayat-laporan" class="table-list dashboard-searchable" style="width:100%;">
-                            <thead><tr><th>Barang</th><th>Jenis</th><th>Status</th><th>Tanggal</th></tr></thead>
+                            <thead><tr><th>Detail Laporan</th><th>Jenis</th><th>Status</th><th>Tanggal Laporan</th><th>Aksi</th></tr></thead>
                             <tbody>
                                 <?php if (!$my_reports || mysqli_num_rows($my_reports) === 0): ?>
-                                    <tr><td colspan="4" class="muted">Kamu belum mengirim laporan.</td></tr>
+                                    <tr><td colspan="5" class="muted">Kamu belum mengirim laporan.</td></tr>
                                 <?php else: ?>
                                     <?php while ($report = mysqli_fetch_assoc($my_reports)): ?>
                                         <?php
@@ -863,19 +986,61 @@ $my_history = mysqli_stmt_get_result($my_history_stmt);
                                             : ($report['status'] === 'Selesai' ? 'pill-done' : 'pill-progress');
                                         ?>
                                         <tr>
-                                            <td><?= htmlspecialchars($report['nama_barang']) ?></td>
+                                            <td class="report-detail-cell">
+                                                <strong><?= htmlspecialchars($report['nama_barang']) ?></strong>
+                                                <div class="report-item-meta">
+                                                    <?= htmlspecialchars($report['nama_kategori'] ?? 'Umum') ?>
+                                                    · <?= htmlspecialchars($report['lokasi_kejadian']) ?>
+                                                    · <?= htmlspecialchars(date('d-m-Y', strtotime($report['tanggal_kejadian']))) ?>
+                                                </div>
+                                                <p><strong>Isi laporan:</strong><br><?= nl2br(htmlspecialchars($report['deskripsi_laporan'] ?? 'Tidak ada deskripsi laporan.')) ?></p>
+                                                <?php if ($report['deskripsi_barang'] !== null && $report['deskripsi_barang'] !== $report['deskripsi_laporan']): ?>
+                                                    <p><strong>Deskripsi barang:</strong><br><?= nl2br(htmlspecialchars($report['deskripsi_barang'])) ?></p>
+                                                <?php endif; ?>
+                                                <div class="report-item-meta">Status barang: <?= htmlspecialchars($report['status_barang']) ?></div>
+                                                <?php if (!empty($report['foto'])): ?>
+                                                    <a class="table-link" href="<?= htmlspecialchars($report['foto']) ?>" target="_blank" rel="noopener">Lihat foto barang</a>
+                                                <?php endif; ?>
+                                            </td>
                                             <td><?= htmlspecialchars($report['jenis_laporan'] === 'Temuan' ? 'Barang Temuan' : 'Barang Hilang') ?></td>
                                             <td><span class="pill <?= $statusClass ?>"><?= htmlspecialchars($statusLabel) ?></span></td>
-                                            <td class="muted"><?= htmlspecialchars(date('d-m-Y', strtotime($report['created_at']))) ?></td>
+                                            <td class="muted"><?= htmlspecialchars(date('d-m-Y', strtotime($report['tanggal_lapor']))) ?></td>
+                                            <td><a class="btn btn-secondary btn-check-detail" href="detail_riwayat_laporan.php?id=<?= (int) $report['id'] ?>">Check Detail</a></td>
                                         </tr>
                                     <?php endwhile; ?>
                                 <?php endif; ?>
                             </tbody>
                         </table>
                     </div>
-                    <div class="btn-row">
-                        <a href="index.php" class="btn btn-outline">Lihat Beranda</a>
-                    </div>
+                    <?php if ($my_reports_total_pages > 1): ?>
+                        <nav class="report-pagination" aria-label="Halaman riwayat laporan">
+                            <?php if ($currentReportsPage > 1): ?>
+                                <a class="btn btn-outline" href="dashboard.php?reports_page=<?= $currentReportsPage - 1 ?>#laporan-saya" rel="prev">
+                                    <i class="fa-solid fa-chevron-left" aria-hidden="true"></i> Sebelumnya
+                                </a>
+                            <?php else: ?>
+                                <span class="btn btn-outline pagination-disabled" aria-disabled="true">
+                                    <i class="fa-solid fa-chevron-left" aria-hidden="true"></i> Sebelumnya
+                                </span>
+                            <?php endif; ?>
+                            <span class="pagination-summary">
+                                Halaman <?= $currentReportsPage ?> dari <?= $my_reports_total_pages ?>
+                                <small>
+                                    Menampilkan <?= $reportsOffset + 1 ?>–<?= min($reportsOffset + $reportsPerPage, $my_reports_total) ?>
+                                    dari <?= $my_reports_total ?> laporan
+                                </small>
+                            </span>
+                            <?php if ($currentReportsPage < $my_reports_total_pages): ?>
+                                <a class="btn btn-outline" href="dashboard.php?reports_page=<?= $currentReportsPage + 1 ?>#laporan-saya" rel="next">
+                                    Berikutnya <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                                </a>
+                            <?php else: ?>
+                                <span class="btn btn-outline pagination-disabled" aria-disabled="true">
+                                    Berikutnya <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                                </span>
+                            <?php endif; ?>
+                        </nav>
+                    <?php endif; ?>
                 </div>
 
                 <div class="panel user-found-panel">
@@ -921,11 +1086,12 @@ $my_history = mysqli_stmt_get_result($my_history_stmt);
                                     <th>Lokasi</th>
                                     <th>Tanggal Kembali</th>
                                     <th>Status</th>
+                                    <th>Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php if (!$my_history || mysqli_num_rows($my_history) === 0): ?>
-                                    <tr><td colspan="5" class="muted">Belum ada barang Anda yang dikembalikan.</td></tr>
+                                    <tr><td colspan="6" class="muted">Belum ada barang Anda yang dikembalikan.</td></tr>
                                 <?php else: ?>
                                     <?php while ($history = mysqli_fetch_assoc($my_history)): ?>
                                         <tr>
@@ -934,6 +1100,13 @@ $my_history = mysqli_stmt_get_result($my_history_stmt);
                                             <td class="muted"><?= htmlspecialchars($history['lokasi_kejadian']) ?></td>
                                             <td class="muted"><?= htmlspecialchars($history['tanggal_kembali'] ? date('d-m-Y', strtotime($history['tanggal_kembali'])) : '-') ?></td>
                                             <td><span class="pill pill-done"><?= htmlspecialchars($history['status_barang']) ?></span></td>
+                                            <td>
+                                                <?php if (!empty($history['laporan_id'])): ?>
+                                                    <a class="btn btn-secondary btn-check-detail" href="detail_riwayat_laporan.php?id=<?= (int) $history['laporan_id'] ?>">Check Detail</a>
+                                                <?php else: ?>
+                                                    <span class="muted">Detail tidak tersedia</span>
+                                                <?php endif; ?>
+                                            </td>
                                         </tr>
                                     <?php endwhile; ?>
                                 <?php endif; ?>
